@@ -1,0 +1,184 @@
+.login-pf-page {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    position: relative;
+    padding-top: 0;
+    background-color: #ffff;
+}
+
+.h2, h2 {
+    font-size: 15px;
+}
+
+#kc-form {
+    flex: 0 0 30%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: #ffffff;
+    box-shadow: 0 0 10px 0 #0000001a;
+    padding: 50px;
+    margin-left: 100px;
+}
+
+#kc-form-wrapper {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.login-pf-page::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 25%;
+    right: 0;
+    background-image: url("https://aigizmo.io/assets/hero-ai-construction-Co4_CQ4h.jpeg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#kc-header {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .login-pf-page .card-pf {
+        padding: 180px 100px 40px 50px; 
+        z-index: 5;
+        
+    }
+}
+
+@media (max-width: 1024px) {
+    .login-pf-page::after {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .login-pf-page {
+        align-items: center;
+        justify-content: center;
+    }
+
+    #kc-form {
+        flex: 1;
+        width: 90%;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 40px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .login-pf-page::after {
+        left: 0;
+        right: 0;
+        opacity: 0.3; 
+        transform: scaleX(-1); 
+        z-index: -1; 
+    }
+
+    .social-google, .button, .input {
+        z-index: 1; 
+    }
+
+    .social-google:hover, .button:hover, .input:focus {
+        opacity: 0.8;
+    }
+}
+
+#heading {
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 40px;
+    text-align: center;
+}
+.input-group {
+    border-radius: 6px;
+    box-shadow: 0 1px 3px #0000001a;
+    margin-bottom: -4px; 
+}
+
+.input-container {
+    position: relative;
+}
+
+.label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db; 
+    font-size: 14px;
+    border-radius: 6px 6px 0 0;
+    outline: none;
+    position: relative;
+}
+
+.input.dark {
+    background-color: #1f2937; 
+    border-color: #374151; 
+    color: white;
+}
+
+.input.dark::placeholder {
+    color: #9ca3af; 
+}
+
+.input.light {
+    color: #111827; 
+}
+
+.input:focus {
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px #3b82f680;
+    z-index: 10;
+}
+
+
+.button {
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    outline: none;
+}
+
+.button.dark {
+    background-color: #181818;
+}
+
+.button.dark:hover {
+    background-color: #181818; 
+}
+
+.button.light {
+    background-color: #181818; 
+}
+
+.button.light:hover {
+    background-color: #181818; 
+}
+
+.button:focus {
+    box-shadow: 0 0 0 2px #181818, 0 0 0 4px #181818;
+}

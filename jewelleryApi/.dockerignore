@@ -1,0 +1,29 @@
+# Ignore virtual environments
+venv-jewelleryapi/
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore logs and temp files
+logs/
+*.log
+
+# Ignore local test and editor configs
+.vscode/
+.pytest_cache/
+tests/
+pytest.ini
+
+# Ignore Docker and Git metadata
+.dockerignore
+.gitignore
+.git/
+
+# Ignore static files (as per request)
+static/
+
+# Ignore temporary files and coverage reports
+fastapi-app.tar
+.coverage
