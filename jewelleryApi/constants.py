@@ -23,6 +23,8 @@ mongoUserCollection = os.getenv("MONGO_USER_COLLECTION_NAME", "users")
 mongoResetPasswordCollection = os.getenv("MONGO_RESET_PASSWORD_COLLECTION_NAME", "passwordReset")
 mongoEmailVerifyCollection = os.getenv("MONGO_EMAILVERIFY_COLLECTION_NAME", "emailVerifyCollection")
 mongoPhoneVerifyCollection = os.getenv("MONGO_PHONEVERIFY_COLLECTION_NAME", "phoneVerifyCollection")
+mongoProductCollection = os.getenv("MONGO_PRODUCT_COLLECTION_NAME", "productCollection")
+mongoImportHistoryCollection = os.getenv("MONGO_IMPORT_HISTORY_COLLECTION_NAME", "importHistoryCollection")
 
 
 # ======================
