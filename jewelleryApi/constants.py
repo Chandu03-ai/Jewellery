@@ -33,3 +33,16 @@ mongoImportHistoryCollection = os.getenv("MONGO_IMPORT_HISTORY_COLLECTION_NAME",
 frontendUrl = os.getenv("FRONTEND_URL", "http://localhost:5173")
 staticImagesPath = os.getenv("STATIC_IMAGES_PATH", "static/images")
 isExchangeToken = os.getenv("IS_EXCHANGE_TOKEN", "false").lower() == "true"
+
+
+
+# ==== Razor Pay Configuration ====
+mongoOrdersCollection = os.getenv("RAZORPAY_COLLECTION_ORDERS", "orders")
+mongoPaymentsCollection = os.getenv("RAZORPAY_COLLECTION_PAYMENTS", "payments")
+mongoPlansCollection = os.getenv("RAZORPAY_COLLECTION_PLANS", "plans")
+mongoSubscriptionsCollection = os.getenv("RAZORPAY_COLLECTION_SUBSCRIPTIONS", "paymentSubscriptions")
+mongoCustomersCollection = os.getenv("RAZORPAY_COLLECTION_CUSTOMERS", "customers")
+mongoInvoiceCollection = os.getenv("RAZORPAY_COLLECTION_INVOICES", "invoices")
+mongoTokensCollection = os.getenv("RAZORPAY_COLLECTION_TOKENS", "tokens")
+mongoTokenLogCollection = os.getenv("RAZORPAY_COLLECTION_TOKENS_LOGS", "tokenLogs")
+rpwebhookSecret = os.getenv("RAZORPAY_WEBHOOK_SECRET", "12345")
