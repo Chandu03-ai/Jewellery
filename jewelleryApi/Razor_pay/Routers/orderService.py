@@ -18,10 +18,10 @@ def createOrder(request:Request,payload: OrderRequest):
             logger.warning("Razorpay returned no order ID.")
             return returnResponse(1527)
 
-        orderData["orderId"] = orderData.pop("id")
+        orderData["id"] = orderData.pop("id")
         insertOrder(orderData)
         orderData.pop("_id", None)
-        logger.info("Order created and stored successfully. orderId: %s", orderData["orderId"])
+        logger.info("Order created and stored successfully. orderId: %s", orderData["id"])
         return returnResponse(1526, result=orderData)
 
     except Exception as e:
@@ -56,7 +56,6 @@ def fetchAllPaymentsForOrder(request:Request,orderId: str):
 @router.get("/orderservice")
 def listOrders(request: Request):
     try:
-        
         logger.info("Fetching all orders.")
         orders = getAllOrders()
         logger.info("All orders fetched successfully.")

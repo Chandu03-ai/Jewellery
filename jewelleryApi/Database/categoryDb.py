@@ -5,31 +5,24 @@ from Database.MongoData import categoriesCollection
 from Utils.slugify import slugify
 from yensiDatetime.yensiDatetime import formatDateTime
 
-
 def insertCategoryIfNotExists(name: str):
     slug = slugify(name)
-    exists = categoriesCollection.find_one({"slug": slug})
-    if not exists:
-        categoriesCollection.insert_one(
-            {
-                "id": str(ObjectId()),
-                "name": name,
-                "slug": slug,
-                "description": "",
-                "createdAt": formatDateTime(),
-                "updatedAt": formatDateTime(),
-            }
-        )
+    existing = getCategoryFromDb({"slug": slug})
+    if not existing:
+        categoriesCollection.insert_one({
+            "id": str(ObjectId()),
+            "name": name,
+            "slug": slug,
+            "description": "",
+            "createdAt": formatDateTime(),
+            "updatedAt": formatDateTime(),
+        })
 
+def getCategoriesFromDb(query: dict = {}, projection: dict = {"_id": 0}):
+    return categoriesCollection.find(query, projection)
 
-def getAllCategoriesFromDb():
-    return categoriesCollection.find({}, {"_id": 0})
+def getCategoryFromDb(query: dict):
+    return categoriesCollection.find_one(query, {"_id": 0})
 
-
-def deleteCategoryByIdFromDb(category_id: str):
-    result = categoriesCollection.delete_one({"id": category_id})
-    return result.deleted_count
-
-
-def getCategoryBySlugFromDb(slug: str):
-    return categoriesCollection.find_one({"slug": slug})
+def deleteCategoryFromDb(query: dict):
+    return categoriesCollection.delete_one(query)

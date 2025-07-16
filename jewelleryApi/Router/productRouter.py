@@ -1,18 +1,18 @@
 # routers/productRouter.py
-
 from typing import List, Optional
 from bson import ObjectId
 from fastapi import APIRouter, Request, UploadFile, File, Query
 from Models.productModel import ProductImportModel
 from Database.productDb import (
     insertProductToDb,
-    getAllProductsFromDb,
+    getProductsFromDb,
+    getProductFromDb,
+    updateProductInDb,
+    deleteProductFromDb,
     deleteProductsFromDb,
-    getProductBySlugFromDb,
-    filterProductsFromDb,
-    importHistoryCollection,
+    insertImportHistoryToDb,
 )
-from Database.categoryDb import insertCategoryIfNotExists, getCategoryBySlugFromDb
+from Database.categoryDb import insertCategoryIfNotExists
 from Utils.utils import hasRequiredRole
 from yensiDatetime.yensiDatetime import formatDateTime
 from Models.userModel import UserRoles
@@ -25,62 +25,133 @@ router = APIRouter(tags=["Products"])
 
 
 @router.post("/importproducts")
-async def import_products(request: Request, payload: List[ProductImportModel]):
-    user_id = request.state.userMetadata.get("id")
+async def importProducts(request: Request, payload: List[ProductImportModel]):
+    userId = request.state.userMetadata.get("id")
+
     if not hasRequiredRole(request, [UserRoles.Admin.value]):
-        logger.warning("Unauthorized access attempt to import products")
+        logger.warning(f"Unauthorized access attempt by user [{userId}] to import products.")
         return returnResponse(2000)
 
-    total, imported, failed = len(payload), 0, 0
-    imported_products = []
+    logger.info(f"Starting product import by user [{userId}]. Total products received: {len(payload)}")
+
+    total, imported, updated, failed = len(payload), 0, 0, 0
+    processedProducts = []
 
     for product in payload:
         try:
-            # Auto-create category if it doesn't exist
+            logger.debug(f"Processing product: {product.name}")
+
             insertCategoryIfNotExists(product.category)
 
-            # Prepare product data
-            product_slug = slugify(product.name)
-            data = product.model_dump()
-            data.update({
-                "id": str(ObjectId()),
-                "slug": product_slug,
-                "createdBy": user_id,
-                "createdAt": formatDateTime(),
-                "updatedAt": formatDateTime(),
-            })
+            slug = slugify(product.name)
+            productDict = product.model_dump()
+            productDict.update(
+                {
+                    "slug": slug,
+                    "updatedAt": formatDateTime(),
+                }
+            )
 
-            insertProductToDb(data)
-            data.pop("_id", None)
-            imported_products.append(data)
-            imported += 1
+            existing = getProductFromDb({"slug": slug})
+
+            if existing:
+                productDict["id"] = existing["id"]
+                productDict["noOfProducts"] = existing.get("noOfProducts", 0) + product.noOfProducts
+                updateProductInDb({"slug": slug}, productDict)
+                updated += 1
+                logger.info(f"Updated existing product quantity: {product.name} (slug: {slug})")
+            else:
+                productDict.update(
+                    {
+                        "id": str(ObjectId()),
+                        "createdBy": userId,
+                        "createdAt": formatDateTime(),
+                    }
+                )
+                insertProductToDb(productDict)
+                imported += 1
+                logger.info(f"Inserted new product: {product.name} (slug: {slug})")
+
+            productDict.pop("_id", None)
+            processedProducts.append(productDict)
 
         except Exception as e:
             failed += 1
-            logger.warning(f"❌ Failed to import product [{product.name}]: {e}")
+            logger.error(f"Error importing/updating product [{product.name}]: {str(e)}")
 
-    importHistoryCollection.insert_one({
-        "id": str(ObjectId()),
-        "userId": user_id,
-        "fileName": "frontend-payload",
-        "timestamp": formatDateTime(),
-        "total": total,
-        "imported": imported,
-        "failed": failed,
-    })
+    insertImportHistoryToDb(
+        {
+            "id": str(ObjectId()),
+            "userId": userId,
+            "fileName": "frontend-payload",
+            "timestamp": formatDateTime(),
+            "total": total,
+            "imported": imported,
+            "updated": updated,
+            "failed": failed,
+        }
+    )
 
-    return returnResponse(2001, result=imported_products)
+    logger.info(f"Product import completed by user [{userId}]. Summary - Total: {total}, Inserted: {imported}, Updated: {updated}, Failed: {failed}")
 
+    return returnResponse(2001, result=processedProducts)
+
+
+@router.put("/product/id/{productId}")
+async def updateProductByIdEndpoint(productId: str, request: Request, payload: ProductImportModel):
+    userId = request.state.userMetadata.get("id")
+
+    if not hasRequiredRole(request, [UserRoles.Admin.value]):
+        logger.warning(f"Unauthorized update attempt by user [{userId}] on product ID: {productId}")
+        return returnResponse(2000)
+
+    try:
+        logger.info(f"User [{userId}] is attempting to update product with ID: {productId}")
+
+        existing = getProductFromDb({"id": productId})
+        if not existing:
+            logger.warning(f"No product found with ID: {productId}")
+            return returnResponse(2016, message="Product not found for update.")
+
+        updatePayload = payload.model_dump()
+        updatePayload.update(
+            {"id": productId, "slug": slugify(payload.name), "updatedAt": formatDateTime(), "createdBy": existing.get("createdBy", userId), "createdAt": existing.get("createdAt", formatDateTime())}
+        )
+
+        if updatePayload.get("noOfProducts", 0) <= 0:
+            updatePayload["inStock"] = False
+
+        updateProductInDb({"id": productId}, updatePayload)
+
+        logger.info(f"Product [ID: {productId}] updated by user [{userId}]")
+        updatePayload.pop("_id", None)
+        return returnResponse(2018, result=updatePayload)
+
+    except Exception as e:
+        logger.error(f"Failed to update product [ID: {productId}] by user [{userId}]: {str(e)}")
+        return returnResponse(2019, message="Error occurred while updating product.")
 
 
 @router.get("/auth/products")
-async def get_products():
+async def getProducts():
     try:
-        products = list(getAllProductsFromDb())
+        products = list(getProductsFromDb())
+        
+
+        for product in products:
+            noOfProducts = product.get("noOfProducts", 0)
+            currentInStock = product.get("inStock", True)
+
+            if noOfProducts <= 0 and currentInStock is not False:
+                product["inStock"] = False
+                updateProductInDb({"slug": product["slug"]}, {"inStock": False})
+                logger.info(f"Updated inStock=False for product: {product['name']} due to zero stock")
+
         return returnResponse(2005, result=products if products else [])
     except Exception as e:
         logger.error(f"Error fetching products: {e}")
         return returnResponse(2004)
+
 
 @router.get("/auth/products/filter")
 async def filter_products(
@@ -90,17 +161,29 @@ async def filter_products(
     tags: Optional[List[str]] = Query(None),
 ):
     try:
-        products = list(filterProductsFromDb(category, price_min, price_max, tags))
+        query = {}
+        if category:
+            query["category"] = category
+        if price_min is not None or price_max is not None:
+            query["price"] = {}
+            if price_min is not None:
+                query["price"]["$gte"] = price_min
+            if price_max is not None:
+                query["price"]["$lte"] = price_max
+        if tags:
+            query["tags"] = {"$in": tags}
 
+        products = list(getProductsFromDb(query))
         return returnResponse(2005, result=products)
     except Exception as e:
         logger.error(f"Error filtering products: {e}")
-        return returnResponse(2004)  # general failure
-    
+        return returnResponse(2004)
+
+
 @router.get("/auth/products/{slug}")
 async def get_product_by_slug(slug: str):
     try:
-        product = getProductBySlugFromDb(slug)
+        product = getProductFromDb({"slug": slug})
         if not product:
             return returnResponse(2010, result=None)
         return returnResponse(2005, result=product)
@@ -109,11 +192,7 @@ async def get_product_by_slug(slug: str):
         return returnResponse(2004)
 
 
-
-
-
-
-@router.post("/auth/products/image-upload")
+@router.post("/products/image-upload")
 async def upload_image(file: UploadFile = File(...)):
     try:
         image_url = save_image(file)
@@ -134,3 +213,24 @@ async def delete_products(request: Request):
     except Exception as e:
         logger.error(f"Error deleting products: {e}")
         return returnResponse(2009)
+
+
+@router.delete("/products/{productId}")
+async def deleteProductById(request: Request, productId: str):
+    userId = request.state.userMetadata.get("id")
+
+    if not hasRequiredRole(request, [UserRoles.Admin.value]):
+        logger.warning(f"Unauthorized access attempt by user [{userId}] to delete product [{productId}]")
+        return returnResponse(2000)
+
+    try:
+        result = deleteProductFromDb({"id": productId})
+        if result.deleted_count:
+            logger.info(f"Product [{productId}] deleted by user [{userId}]")
+            return returnResponse(2015, result={"deleted": 1})
+        else:
+            logger.info(f"Product [{productId}] not found for deletion by user [{userId}]")
+            return returnResponse(2016, result={"deleted": 0})
+    except Exception as e:
+        logger.error(f"Error deleting product [{productId}] by user [{userId}]: {str(e)}")
+        return returnResponse(2017)

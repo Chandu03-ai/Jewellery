@@ -22,5 +22,6 @@ class ProductImportModel(BaseModel):
     featured: Optional[bool] = False
     tags: List[str] = Field(default_factory=list)  # bestseller, trending, newIn
     variants: dict = Field(default_factory=dict)  # metal, size, stone
+    noOfProducts: int = 0
 
 
