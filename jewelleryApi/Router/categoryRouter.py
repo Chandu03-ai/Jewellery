@@ -5,8 +5,9 @@ from fastapi import APIRouter, Request
 from Models.categoryModel import CategoryModel
 from Database.categoryDb import (
     insertCategoryIfNotExists,
-    getAllCategoriesFromDb,
-    deleteCategoryByIdFromDb
+    getCategoriesFromDb,
+    deleteCategoryFromDb,
+    getCategoryFromDb,
 )
 from Utils.utils import hasRequiredRole
 from yensiDatetime.yensiDatetime import formatDateTime
@@ -17,6 +18,7 @@ from ReturnLog.logReturn import returnResponse
 
 router = APIRouter(tags=["Categories"])
 
+
 @router.post("/categories")
 async def create_category(request: Request, payload: CategoryModel):
     if not hasRequiredRole(request, [UserRoles.Admin.value]):
@@ -24,32 +26,38 @@ async def create_category(request: Request, payload: CategoryModel):
         return returnResponse(2000)
 
     try:
-        # Prevent duplicate category creation
-        insertCategoryIfNotExists(payload.name)
+        slug = slugify(payload.name)
 
-        # Return consistent result payload
+        existing = getCategoryFromDb({"slug": slug})
+        if existing:
+            logger.info(f"Category already exists: {payload.name}")
+            return returnResponse(2023, result=existing)
+
         category_data = {
             "id": str(ObjectId()),
             "name": payload.name,
-            "slug": slugify(payload.name),
+            "slug": slug,
             "description": payload.description,
             "createdAt": formatDateTime(),
             "updatedAt": formatDateTime(),
         }
 
+        insertCategoryIfNotExists(payload.name)  # fallback insert
         return returnResponse(2020, result=category_data)
     except Exception as e:
         logger.error(f"Error creating category: {e}")
         return returnResponse(2022)
 
+
 @router.get("/auth/categories")
 async def get_categories():
     try:
-        categories = list(getAllCategoriesFromDb())
+        categories = list(getCategoriesFromDb())
         return returnResponse(2021, result=categories or [])
     except Exception as e:
         logger.error(f"Error fetching categories: {e}")
         return returnResponse(2022)
+
 
 @router.delete("/categories/{id}")
 async def delete_category(id: str, request: Request):
@@ -58,8 +66,8 @@ async def delete_category(id: str, request: Request):
         return returnResponse(2000)
 
     try:
-        deleted = deleteCategoryByIdFromDb(id)
-        return returnResponse(2024 if deleted else 2025, result={"deleted": deleted})
+        deleted = deleteCategoryFromDb({"id": id})
+        return returnResponse(2024 if deleted.deleted_count else 2025, result={"deleted": deleted.deleted_count})
     except Exception as e:
         logger.error(f"Error deleting category: {e}")
         return returnResponse(2026)
