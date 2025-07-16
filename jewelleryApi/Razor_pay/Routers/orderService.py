@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter,Request
 from Razor_pay.Models.model import OrderRequest
 from Razor_pay.Services.razorpayClient import client
 from Razor_pay.Database.ordersDb import *
@@ -7,9 +7,8 @@ from yensiAuthentication import logger
 
 router = APIRouter(tags=["Order Service"])
 
-
 @router.post("/order")
-def createOrder(payload: OrderRequest):
+def createOrder(request:Request,payload: OrderRequest):
     try:
         logger.info("Initiating Razorpay order creation.")
         orderData = client.order.create(payload.model_dump(exclude_unset=True))
@@ -31,7 +30,7 @@ def createOrder(payload: OrderRequest):
 
 
 @router.get("/orders/{orderId}")
-def fetchOrder(orderId: str):
+def fetchOrder(request:Request,orderId: str):
     try:
         logger.info("Fetching order. orderId: %s", orderId)
         order = getOrderById(orderId)
@@ -43,7 +42,7 @@ def fetchOrder(orderId: str):
 
 
 @router.get("/orders/{orderId}/payments")
-def fetchAllPaymentsForOrder(orderId: str):
+def fetchAllPaymentsForOrder(request:Request,orderId: str):
     try:
         logger.info("Fetching payments for order. orderId: %s", orderId)
         payments = client.order.payments(orderId)
@@ -55,8 +54,9 @@ def fetchAllPaymentsForOrder(orderId: str):
 
 
 @router.get("/orderservice")
-def listOrders():
+def listOrders(request: Request):
     try:
+        
         logger.info("Fetching all orders.")
         orders = getAllOrders()
         logger.info("All orders fetched successfully.")

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from yensiAuthentication import logger,yensiloginRouter,yensiSsoRouter
-from Router import generalRouter
+from Router import generalRouter,productRouter,categoryRouter,cartRouter,reviewRouter,tagRouter,variantRouter
+from Razor_pay.Routers import customerService,orderService,paymentService,webhookService
 from fastapi.middleware.cors import CORSMiddleware
 from yensiAuthentication.authenticate import KeycloakMiddleware
 import uvicorn
@@ -26,7 +27,19 @@ app.add_middleware(KeycloakMiddleware)
 # Include authentication router
 app.include_router(yensiloginRouter)
 app.include_router(yensiSsoRouter)
+app.include_router(customerService.router)
+app.include_router(orderService.router)
+app.include_router(paymentService.router)
+app.include_router(webhookService.router)
 app.include_router(generalRouter.router)
+app.include_router(productRouter.router)
+app.include_router(categoryRouter.router)
+app.include_router(cartRouter.router)
+app.include_router(tagRouter.router)
+app.include_router(variantRouter.router)
+app.include_router(reviewRouter.router)
+
+
 
 # run the FastAPI application
 if __name__=="__main__":

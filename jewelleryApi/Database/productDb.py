@@ -1,4 +1,4 @@
-from MongoData import productsCollection,importHistoryCollection
+from Database.MongoData import productsCollection,importHistoryCollection
 
 # Product Collection Methods
 
@@ -39,3 +39,35 @@ def insertImportHistoryToDb(historyData: dict):
 
 def getImportHistoryFromDb():
     return importHistoryCollection.find({}, {"_id": 0}).sort("timestamp", -1)
+
+def deleteProductsFromDb(query: dict):
+    """
+    Deletes products from the database based on the provided query.
+    :param query: Dictionary containing the criteria for deletion.
+    :return: Number of deleted documents.
+    """
+    result = productsCollection.delete_many(query)
+    return result.deleted_count
+
+
+def getProductBySlugFromDb(slug: str):
+    return productsCollection.find_one({"slug": slug}, {"_id": 0})
+
+def filterProductsFromDb(category=None, price_min=None, price_max=None, tags=None):
+    query = {}
+
+    if category:
+        query["category"] = category
+
+    if price_min is not None or price_max is not None:
+        query["price"] = {}
+        if price_min is not None:
+            query["price"]["$gte"] = price_min
+        if price_max is not None:
+            query["price"]["$lte"] = price_max
+
+    if tags:
+        query["tags"] = {"$in": tags}
+
+    return productsCollection.find(query, {"_id": 0})
+

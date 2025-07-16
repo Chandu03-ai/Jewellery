@@ -7,6 +7,11 @@ from yensiAuthentication import logger
 from Razor_pay.Database.paymentsDb import *
 from Razor_pay.Database.invoiceDb import *
 from Razor_pay.Utils.util import getCustomerId
+from Razor_pay.Models.paymentModel import PaymentVerificationPayload
+import hmac
+import hashlib
+from constants import razorpaySecret
+
 router = APIRouter(prefix="/payments", tags=["Payment Service"])
 
 
@@ -42,3 +47,26 @@ def getInvoiceUsingPaymentId(paymentId: str):
         logger.error(f"Error fetching invoice for payment {paymentId}: {str(e)}")
         return returnResponse(1557)
 
+
+@router.post("/payment/verify")
+def verifyPayment(payload: PaymentVerificationPayload):
+    try:
+        logger.info("Verifying Razorpay payment.")
+        body = f"{payload.razorpay_order_id}|{payload.razorpay_payment_id}"  # Replace with actual secret securely
+        generated_signature = hmac.new(
+            key=bytes(razorpaySecret, "utf-8"),
+            msg=bytes(body, "utf-8"),
+            digestmod=hashlib.sha256
+        ).hexdigest()
+
+        if generated_signature == payload.razorpay_signature:
+            logger.info("✅ Payment signature verified successfully.")
+            # You can also update order status in DB here if needed
+            return returnResponse(1534, result={"status": "success"})
+        else:
+            logger.warning("❌ Payment signature mismatch.")
+            return returnResponse(1535, result={"status": "invalid signature"})
+
+    except Exception as e:
+        logger.error("Payment verification failed. Error: %s", str(e))
+        return returnResponse(1536)
