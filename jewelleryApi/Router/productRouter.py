@@ -1,7 +1,7 @@
 # routers/productRouter.py
 from typing import List, Optional
 from bson import ObjectId
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Body, Request, Query
 from Models.productModel import ProductImportModel
 from Database.productDb import insertProductToDb, getProductsFromDb, getProductFromDb, updateProductInDb, deleteProductFromDb, deleteProductsFromDb, insertImportHistoryToDb
 from Database.categoryDb import insertCategoryIfNotExists
@@ -12,100 +12,11 @@ from yensiAuthentication import logger
 from Utils.slugify import slugify
 from ReturnLog.logReturn import returnResponse
 
-router = APIRouter(tags=["Products"])
+router = APIRouter(prefix="/public",tags=["Products"])
 
 
-@router.post("/importproducts")
-async def importProducts(request: Request, payload: List[ProductImportModel]):
-    userId = request.state.userMetadata.get("id")
 
-    if not hasRequiredRole(request, [UserRoles.Admin.value]):
-        logger.warning(f"Unauthorized access attempt by user [{userId}] to import products.")
-        return returnResponse(2000)
-    logger.info(f"Starting product import by user [{userId}]. Total products received: {len(payload)}")
-    total, imported, updated, failed = len(payload), 0, 0, 0
-    processedProducts = []
-    for product in payload:
-        try:
-            logger.debug(f"Processing product: {product.name}")
-            insertCategoryIfNotExists(product.category)
-
-            slug = slugify(product.name)
-            productDict = product.model_dump()
-            productDict.update({"slug": slug, "updatedAt": formatDateTime()})
-            existing = getProductFromDb({"slug": slug})
-
-            if existing:
-                productDict["id"] = existing["id"]
-                productDict["noOfProducts"] = existing.get("noOfProducts", 0) + product.noOfProducts
-                updateProductInDb({"slug": slug}, productDict)
-                updated += 1
-                logger.info(f"Updated existing product quantity: {product.name} (slug: {slug})")
-            else:
-                productDict.update({"id": str(ObjectId()), "createdBy": userId, "createdAt": formatDateTime()})
-                insertProductToDb(productDict)
-                imported += 1
-                logger.info(f"Inserted new product: {product.name} (slug: {slug})")
-
-            productDict.pop("_id", None)
-            processedProducts.append(productDict)
-
-        except Exception as e:
-            failed += 1
-            logger.error(f"Error importing/updating product [{product.name}]: {str(e)}")
-
-    insertImportHistoryToDb(
-        {
-            "id": str(ObjectId()),
-            "userId": userId,
-            "fileName": "frontend-payload",
-            "timestamp": formatDateTime(),
-            "total": total,
-            "imported": imported,
-            "updated": updated,
-            "failed": failed,
-        }
-    )
-
-    logger.info(f"Product import completed by user [{userId}]. Summary - Total: {total}, Inserted: {imported}, Updated: {updated}, Failed: {failed}")
-    return returnResponse(2001, result=processedProducts)
-
-
-@router.put("/product/id/{productId}")
-async def updateProductByIdEndpoint(productId: str, request: Request, payload: ProductImportModel):
-    try:
-        logger.debug(f"updateProductByIdEndpoint function started for productId:{productId}")
-        userId = request.state.userMetadata.get("id")
-        if not hasRequiredRole(request, [UserRoles.Admin.value]):
-            logger.warning(f"Unauthorized update attempt by user [{userId}] on product ID: {productId}")
-            return returnResponse(2000)
-        logger.info(f"User [{userId}] is attempting to update product with ID: {productId}")
-
-        existing = getProductFromDb({"id": productId})
-        if not existing:
-            logger.warning(f"No product found with ID: {productId}")
-            return returnResponse(2016, message="Product not found for update.")
-
-        updatePayload = payload.model_dump()
-        updatePayload.update(
-            {"id": productId, "slug": slugify(payload.name), "updatedAt": formatDateTime(), "createdBy": existing.get("createdBy", userId), "createdAt": existing.get("createdAt", formatDateTime())}
-        )
-
-        if updatePayload.get("noOfProducts", 0) <= 0:
-            updatePayload["inStock"] = False
-
-        updateProductInDb({"id": productId}, updatePayload)
-
-        logger.info(f"Product [ID: {productId}] updated by user [{userId}]")
-        updatePayload.pop("_id", None)
-        return returnResponse(2018, result=updatePayload)
-
-    except Exception as e:
-        logger.error(f"Failed to update product [ID: {productId}] by user [{userId}]: {str(e)}")
-        return returnResponse(2019, message="Error occurred while updating product.")
-
-
-@router.get("/auth/products")
+@router.get("/products")
 async def getProducts():
     try:
         logger.debug(f"fetching all products")
@@ -126,7 +37,7 @@ async def getProducts():
         return returnResponse(2004)
 
 
-@router.get("/auth/products/filter")
+@router.get("/products/filter")
 async def filterProducts(category: Optional[str] = None, priceMin: Optional[float] = None, priceMax: Optional[float] = None, tags: Optional[List[str]] = Query(None)):
 
     try:
@@ -151,7 +62,7 @@ async def filterProducts(category: Optional[str] = None, priceMin: Optional[floa
         return returnResponse(2004)
 
 
-@router.get("/auth/products/{slug}")
+@router.get("/products/{slug}")
 async def getProductBySlug(slug: str):
     try:
         logger.debug(f"getProductBySlug function started ")
@@ -165,37 +76,88 @@ async def getProductBySlug(slug: str):
         return returnResponse(2004)
 
 
-@router.delete("/deleteProducts")
-async def deleteProducts(request: Request):
 
+@router.get("/products/featured")
+async def getFeaturedProducts():
     try:
-        logger.debug(f"deleteProducts function started")
-        if not hasRequiredRole(request, [UserRoles.Admin.value]):
-            logger.warning("Unauthorized access attempt to delete products")
-            return returnResponse(2000)
-        deleted_count = deleteProductsFromDb({})
-        logger.info(f"deleted products successfully")
-        return returnResponse(2008 if deleted_count else 2007, result={"deleted": deleted_count})
+        logger.debug("Fetching featured products")
+        featured = list(getProductsFromDb({"featured": True}))
+        return returnResponse(2085, result=featured)
     except Exception as e:
-        logger.error(f"Error deleting products: {e}")
-        return returnResponse(2009)
+        logger.error(f"Error fetching featured products: {e}")
+        return returnResponse(2086)
 
 
-@router.delete("/products/{productId}")
-async def deleteProductById(request: Request, productId: str):
+@router.get("/products/by-tag/{tag}")
+async def getProductsByTag(tag: str):
     try:
-        logger.debug(f"deleteProductById function started for productId: {productId}")
+        logger.debug(f"Fetching products with tag: {tag}")
+        taggedProducts = list(getProductsFromDb({"tags": tag}))
+        return returnResponse(2087, result=taggedProducts)
+    except Exception as e:
+        logger.error(f"Error fetching products by tag: {e}")
+        return returnResponse(2088)
+
+
+@router.get("/products/search")
+async def searchProducts(q: str):
+    try:
+        logger.debug(f"Searching products for query: {q}")
+        query = {"$or": [
+            {"name": {"$regex": q, "$options": "i"}},
+            {"category": {"$regex": q, "$options": "i"}},
+            {"tags": {"$in": [q]}},
+        ]}
+        products = list(getProductsFromDb(query))
+        suggestions = [
+            {"query": q, "type": "product", "count": len(products)}
+        ]
+        return returnResponse(2089, result={"products": products, "total": len(products), "suggestions": suggestions})
+    except Exception as e:
+        logger.error(f"Search failed: {e}")
+        return returnResponse(2090)
+
+
+@router.get("/products/suggestions")
+async def getSearchSuggestions(q: str):
+    try:
+        logger.debug(f"Getting suggestions for query: {q}")
+        query = {"$or": [
+            {"name": {"$regex": q, "$options": "i"}},
+            {"category": {"$regex": q, "$options": "i"}},
+            {"tags": {"$in": [q]}},
+        ]}
+        products = list(getProductsFromDb(query))
+        suggestions = [
+            {"query": q, "type": "product", "count": len(products)}
+        ]
+        return returnResponse(2091, result=suggestions)
+    except Exception as e:
+        logger.error(f"Suggestion generation failed: {e}")
+        return returnResponse(2092)
+
+
+
+
+# Stub endpoints for reviews (assume models and DB logic are elsewhere)
+@router.get("/products/{productId}/reviews")
+async def getProductReviews(productId: str):
+    try:
+        # Dummy fetch logic placeholder
+        logger.debug(f"Fetching reviews for product [{productId}]")
+        return returnResponse(2095, result=[])
+    except Exception as e:
+        logger.error(f"Failed to fetch reviews for [{productId}]: {e}")
+        return returnResponse(2096)
+
+
+@router.post("/products/{productId}/reviews")
+async def addProductReview(request: Request, productId: str, payload: dict = Body(...)):
+    try:
+        # Dummy insert logic placeholder
         userId = request.state.userMetadata.get("id")
-        if not hasRequiredRole(request, [UserRoles.Admin.value]):
-            logger.warning(f"Unauthorized access attempt by user [{userId}] to delete product [{productId}]")
-            return returnResponse(2000)
-        result = deleteProductFromDb({"id": productId})
-        if result.deleted_count:
-            logger.info(f"Product [{productId}] deleted by user [{userId}]")
-            return returnResponse(2015, result={"deleted": 1})
-        else:
-            logger.info(f"Product [{productId}] not found for deletion by user [{userId}]")
-            return returnResponse(2016, result={"deleted": 0})
+        logger.debug(f"User [{userId}] adding review to product [{productId}]")
+        return returnResponse(2097, result=payload)
     except Exception as e:
-        logger.error(f"Error deleting product [{productId}] by user [{userId}]: {str(e)}")
-        return returnResponse(2017)
+        logger.error(f"Failed to add review: {e}")
+        return returnResponse(2098)

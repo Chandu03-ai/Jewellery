@@ -9,13 +9,13 @@ from yensiDatetime.yensiDatetime import formatDateTime
 from Models.userModel import UserRoles
 from yensiAuthentication import logger
 from ReturnLog.logReturn import returnResponse
-from Models.variantModel import VariantModel
+from Models.variantModel import Variants
 
 router = APIRouter(tags=["Variants"])
 
 
 @router.post("/variants")
-async def create_variant(request: Request, payload: VariantModel):
+async def create_variant(request: Request, payload: Variants):
     if not hasRequiredRole(request, [UserRoles.Admin.value]):
         logger.warning("Unauthorized access to create variant")
         return returnResponse(2000)

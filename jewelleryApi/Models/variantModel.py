@@ -1,6 +1,10 @@
 from pydantic import BaseModel
-from typing import Literal
+from typing import List, Literal, Optional
 
-class VariantModel(BaseModel):
-    type: Literal["size", "metal", "stone"]
-    value: str
+class Variants(BaseModel):
+    colors: List[str] = []
+    sizes: List[str] = []
+    materials: List[str] = []
+    size: Optional[str] = ""
+    metal: Optional[str] = ""
+    stone: Optional[str] = ""

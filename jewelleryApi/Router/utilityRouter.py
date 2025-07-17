@@ -8,7 +8,7 @@ from Utils.imageUploader import saveFile
 router = APIRouter(tags=["Utility"])
 
 
-@router.post("/upload-file")
+@router.post("/auth/upload-file")
 async def uploadFile(file: UploadFile = File(...)):
     try:
         fileName = await saveFile(file)
