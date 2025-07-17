@@ -1,14 +1,11 @@
 # routers/categoryRouter.py
 
+# routers/categoryRouter.py
+
 from bson import ObjectId
 from fastapi import APIRouter, Request
 from Models.categoryModel import CategoryModel
-from Database.categoryDb import (
-    insertCategoryIfNotExists,
-    getCategoriesFromDb,
-    deleteCategoryFromDb,
-    getCategoryFromDb,
-)
+from Database.categoryDb import insertCategoryIfNotExists, getCategoriesFromDb, deleteCategoryFromDb, getCategoryFromDb
 from Utils.utils import hasRequiredRole
 from yensiDatetime.yensiDatetime import formatDateTime
 from Models.userModel import UserRoles
@@ -22,29 +19,39 @@ router = APIRouter(tags=["Categories"])
 @router.post("/categories")
 async def createCategory(request: Request, payload: CategoryModel):
     try:
-        logger.info(f"createCategory function started")
+        logger.info("createCategory function started")
+
         if not hasRequiredRole(request, [UserRoles.Admin.value]):
             logger.warning("Unauthorized access to create category")
             return returnResponse(2000)
-        slug = slugify(payload.name)
+
+        slug = slugify(payload.slug or payload.name)
 
         existing = getCategoryFromDb({"slug": slug})
         if existing:
             logger.info(f"Category already exists: {payload.name}")
             return returnResponse(2023, result=existing)
 
-        categorydata = {
+        categoryData = {
             "id": str(ObjectId()),
             "name": payload.name,
             "slug": slug,
             "description": payload.description,
+            "image": payload.image,
+            "parentCategory": payload.parentCategory,
+            "sortOrder": payload.sortOrder,
+            "isActive": payload.isActive,
+            "metaTitle": payload.metaTitle,
+            "metaDescription": payload.metaDescription,
+            "productCount": payload.productCount,
             "createdAt": formatDateTime(),
             "updatedAt": formatDateTime(),
         }
 
-        insertCategoryIfNotExists(payload.name)  # fallback insert
-        logger.info(f"Category created successfully")
-        return returnResponse(2020, result=categorydata)
+        insertCategoryIfNotExists(payload.name)  # Optional fallback
+        logger.info(f"Category created successfully: {payload.name}")
+        return returnResponse(2020, result=categoryData)
+
     except Exception as e:
         logger.error(f"Error creating category: {e}")
         return returnResponse(2022)

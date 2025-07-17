@@ -1,4 +1,5 @@
 # routers/tagRouter.py
+
 from bson import ObjectId
 from fastapi import APIRouter, Request
 from Database.tagDb import insertTagToDb, getAllTagsFromDb, addTagsToProductInDb
@@ -8,27 +9,37 @@ from Models.userModel import UserRoles
 from yensiAuthentication import logger
 from ReturnLog.logReturn import returnResponse
 from Models.tagModel import TagModel, TagUpdateModel
+from Utils.slugify import slugify
 
 router = APIRouter(tags=["Tags"])
 
 
 @router.post("/tags")
 async def createTag(request: Request, payload: TagModel):
-
     try:
-        logger.debug(f"creatTag function called")
+        logger.debug("createTag function called")
         if not hasRequiredRole(request, [UserRoles.Admin.value]):
             logger.warning("Unauthorized access to create tag")
             return returnResponse(2000)
+
+        slug = slugify(payload.name)
+
         tagData = {
             "id": str(ObjectId()),
             "name": payload.name,
+            "slug": slug,
+            "color": payload.color,
+            "isActive": payload.isActive,
+            "sortOrder": payload.sortOrder,
+            "productCount": payload.productCount,
             "createdAt": formatDateTime(),
             "updatedAt": formatDateTime(),
         }
+
         insertTagToDb(tagData)
-        logger.info(f"tag created successfully")
+        logger.info("Tag created successfully")
         return returnResponse(2040, result=tagData)
+
     except Exception as e:
         logger.error(f"Error creating tag: {e}")
         return returnResponse(2042)
