@@ -9,12 +9,9 @@ from yensiDatetime.yensiDatetime import formatDateTime
 from Models.userModel import UserRoles
 from yensiAuthentication import logger
 from ReturnLog.logReturn import returnResponse
+from Models.variantModel import VariantModel
 
 router = APIRouter(tags=["Variants"])
-
-class VariantModel(BaseModel):
-    type: Literal["size", "metal", "stone"]
-    value: str
 
 
 @router.post("/variants")

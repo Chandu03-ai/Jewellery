@@ -20,12 +20,12 @@ router = APIRouter(tags=["Categories"])
 
 
 @router.post("/categories")
-async def create_category(request: Request, payload: CategoryModel):
-    if not hasRequiredRole(request, [UserRoles.Admin.value]):
-        logger.warning("Unauthorized access to create category")
-        return returnResponse(2000)
-
+async def createCategory(request: Request, payload: CategoryModel):
     try:
+        logger.info(f"createCategory function started")
+        if not hasRequiredRole(request, [UserRoles.Admin.value]):
+            logger.warning("Unauthorized access to create category")
+            return returnResponse(2000)
         slug = slugify(payload.name)
 
         existing = getCategoryFromDb({"slug": slug})
@@ -33,7 +33,7 @@ async def create_category(request: Request, payload: CategoryModel):
             logger.info(f"Category already exists: {payload.name}")
             return returnResponse(2023, result=existing)
 
-        category_data = {
+        categorydata = {
             "id": str(ObjectId()),
             "name": payload.name,
             "slug": slug,
@@ -43,16 +43,19 @@ async def create_category(request: Request, payload: CategoryModel):
         }
 
         insertCategoryIfNotExists(payload.name)  # fallback insert
-        return returnResponse(2020, result=category_data)
+        logger.info(f"Category created successfully")
+        return returnResponse(2020, result=categorydata)
     except Exception as e:
         logger.error(f"Error creating category: {e}")
         return returnResponse(2022)
 
 
 @router.get("/auth/categories")
-async def get_categories():
+async def getCategories():
     try:
+        logger.debug(f"fetching all categories")
         categories = list(getCategoriesFromDb())
+        logger.info(f"fetched all categories successfully")
         return returnResponse(2021, result=categories or [])
     except Exception as e:
         logger.error(f"Error fetching categories: {e}")
@@ -60,13 +63,14 @@ async def get_categories():
 
 
 @router.delete("/categories/{id}")
-async def delete_category(id: str, request: Request):
-    if not hasRequiredRole(request, [UserRoles.Admin.value]):
-        logger.warning("Unauthorized access to delete category")
-        return returnResponse(2000)
-
+async def deleteCategory(id: str, request: Request):
     try:
+        logger.debug(f"deleteCategorey function started for id:{id}")
+        if not hasRequiredRole(request, [UserRoles.Admin.value]):
+            logger.warning("Unauthorized access to delete category")
+            return returnResponse(2000)
         deleted = deleteCategoryFromDb({"id": id})
+        logger.info(f"category deleted successfully for id:{id}")
         return returnResponse(2024 if deleted.deleted_count else 2025, result={"deleted": deleted.deleted_count})
     except Exception as e:
         logger.error(f"Error deleting category: {e}")
