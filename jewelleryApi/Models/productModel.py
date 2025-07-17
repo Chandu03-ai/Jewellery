@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from Models.variantModel import VariantModel
 
 class Specifications(BaseModel):
     material: str = ""
@@ -13,6 +14,7 @@ class ProductImportModel(BaseModel):
     category: str = ""
     description: str = ""
     price: float = 0.0
+    videos: List[str] = Field(default_factory=list)
     images: List[str] = Field(default_factory=list)
     preorderAvailable: bool = False
     inStock: bool = True
@@ -21,7 +23,7 @@ class ProductImportModel(BaseModel):
     reviews: Optional[int] = 0
     featured: Optional[bool] = False
     tags: List[str] = Field(default_factory=list)  # bestseller, trending, newIn
-    variants: dict = Field(default_factory=dict)  # metal, size, stone
+    variants:VariantModel = Field(default_factory=VariantModel)  # metal, size, stone
     noOfProducts: int = 0
 
 

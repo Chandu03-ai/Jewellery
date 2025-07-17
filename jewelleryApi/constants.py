@@ -39,6 +39,7 @@ mongoTagsCollection = os.getenv("MONGO_TAGS_COLLECTION_NAME", "tagsCollection")
 # ======================
 frontendUrl = os.getenv("FRONTEND_URL", "http://localhost:5173")
 staticImagesPath = os.getenv("STATIC_IMAGES_PATH", "static/images")
+staticOriginalPath = os.getenv("STATIC_ORIGINAL_PATH", "static/originalImages/")
 isExchangeToken = os.getenv("IS_EXCHANGE_TOKEN", "false").lower() == "true"
 
 

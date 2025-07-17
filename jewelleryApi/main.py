@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from yensiAuthentication import logger,yensiloginRouter,yensiSsoRouter
-from Router import generalRouter,productRouter,categoryRouter,cartRouter,reviewRouter,tagRouter,variantRouter
+from Router import generalRouter,productRouter,categoryRouter,cartRouter,reviewRouter,tagRouter,variantRouter,utilityRouter
 from Razor_pay.Routers import customerService,orderService,paymentService,webhookService
 from fastapi.middleware.cors import CORSMiddleware
 from yensiAuthentication.authenticate import KeycloakMiddleware
@@ -38,6 +38,7 @@ app.include_router(cartRouter.router)
 app.include_router(tagRouter.router)
 app.include_router(variantRouter.router)
 app.include_router(reviewRouter.router)
+app.include_router(utilityRouter.router)
 
 
 
