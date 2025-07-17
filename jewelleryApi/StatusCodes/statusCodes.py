@@ -103,4 +103,8 @@ CUSTOM_STATUS_CODES = {
     2096: {"code": 2096, "message": "Error fetching product reviews."},
     2097: {"code": 2097, "message": "Product review added successfully."},
     2098: {"code": 2098, "message": "Error adding product review."},
+
+    2099: {"code": 2099, "message": "No files were uploaded successfully"},
+    2100: {"code": 2100, "message": "Files uploaded successfully."},
+    2101: {"code": 2101, "message": "Error occured while uploading files."},
 }

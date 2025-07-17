@@ -20,9 +20,26 @@ class ProductImportModel(BaseModel):
     price: float
     comparePrice: Optional[float] = 0
     images: List[str] = Field(default_factory=list)
-    preorderAvailable: bool = False
-    inStock: bool = True
+
+    # === SEO ===
+    metaTitle: Optional[str] = ""
+    metaDescription: Optional[str] = ""
+    seoKeywords: List[str] = Field(default_factory=list)
+
+    # === Metrics ===
+    viewCount: Optional[int] = 0
+    salesCount: Optional[int] = 0
+
+    # === Specs, Tags, and Variants ===
     specifications: Specifications = Field(default_factory=Specifications)
+    tags: List[str] = Field(default_factory=list)
+    variants: VariantsExtended = Field(default_factory=VariantsExtended)
+
+    # === Optional Old Variant Compatibility ===
+    # variants: VariantModel = Field(default_factory=VariantModel)  # comment out if unused
+
+    # === Additional ===
+    dimensions: Optional[DimensionsModel] = Field(default_factory=DimensionsModel)
     rating: Optional[float] = 0.0
     reviews: Optional[int] = 0
     featured: Optional[bool] = False
