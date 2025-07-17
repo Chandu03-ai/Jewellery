@@ -6,6 +6,9 @@ def insertTagToDb(data: dict):
 def getAllTagsFromDb():
     return tagsCollection.find({}, {"_id": 0})
 
+def getTagFromDb(query: dict):
+    return tagsCollection.find_one(query, {"_id": 0})
+
 def addTagsToProductInDb(product_id: str, tags: list[str]):
     result = productsCollection.update_one(
         {"id": product_id},

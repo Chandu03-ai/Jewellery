@@ -107,4 +107,9 @@ CUSTOM_STATUS_CODES = {
     2099: {"code": 2099, "message": "No files were uploaded successfully"},
     2100: {"code": 2100, "message": "Files uploaded successfully."},
     2101: {"code": 2101, "message": "Error occured while uploading files."},
+
+
+    2102: {"code": 2102, "message": "Failed to parse file. Ensure the format is valid and field values are correct."},
+    2103: {"code": 2103, "message": "Product created successfully."},
+    2104: {"code": 2104, "message": "Unexpected error occurred while creating products."},
 }

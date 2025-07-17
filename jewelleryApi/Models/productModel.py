@@ -1,17 +1,21 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+
 class Dimensions(BaseModel):
     length: Optional[float] = 0
     width: Optional[float] = 0
     height: Optional[float] = 0
     weight: Optional[float] = 0
 
+
 class Specifications(BaseModel):
     material: Optional[str] = ""
     weight: Optional[str] = ""
     dimensions: Optional[str] = ""
     gemstone: Optional[str] = ""
+
+
 class ProductImportModel(BaseModel):
     name: str
     slug: Optional[str] = None
@@ -20,26 +24,9 @@ class ProductImportModel(BaseModel):
     price: float
     comparePrice: Optional[float] = 0
     images: List[str] = Field(default_factory=list)
-
-    # === SEO ===
-    metaTitle: Optional[str] = ""
-    metaDescription: Optional[str] = ""
-    seoKeywords: List[str] = Field(default_factory=list)
-
-    # === Metrics ===
-    viewCount: Optional[int] = 0
-    salesCount: Optional[int] = 0
-
-    # === Specs, Tags, and Variants ===
+    preorderAvailable: bool = False
+    inStock: bool = True
     specifications: Specifications = Field(default_factory=Specifications)
-    tags: List[str] = Field(default_factory=list)
-    variants: VariantsExtended = Field(default_factory=VariantsExtended)
-
-    # === Optional Old Variant Compatibility ===
-    # variants: VariantModel = Field(default_factory=VariantModel)  # comment out if unused
-
-    # === Additional ===
-    dimensions: Optional[DimensionsModel] = Field(default_factory=DimensionsModel)
     rating: Optional[float] = 0.0
     reviews: Optional[int] = 0
     featured: Optional[bool] = False
@@ -56,4 +43,3 @@ class ProductImportModel(BaseModel):
     relatedProducts: List[str] = Field(default_factory=list)
     metaTitle: Optional[str] = ""
     metaDescription: Optional[str] = ""
-
