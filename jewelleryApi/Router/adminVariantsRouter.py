@@ -18,15 +18,15 @@ async def createVariant(request: Request, payload: VariantModel):
         return returnResponse(2000)
 
     try:
-        variantData = {
-            "id": str(ObjectId()),
-            "type": payload.type,
-            "value": payload.value,
-            "isActive": payload.isActive,
-            "sortOrder": payload.sortOrder or 0,
-            "createdAt": formatDateTime(),
-            "updatedAt": formatDateTime(),
-        }
+        now = formatDateTime()
+        variantData = payload.model_dump()
+        variantData.update(
+            {
+                "id": str(ObjectId()),
+                "createdAt": now,
+                "updatedAt": now,
+            }
+        )
         insertVariantToDb(variantData)
         logger.info(f"Variant created: {variantData}")
         return returnResponse(2030, result=variantData)

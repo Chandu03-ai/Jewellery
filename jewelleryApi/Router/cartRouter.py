@@ -15,13 +15,8 @@ async def addToCart(request: Request, payload: CartItemModel):
     try:
         userId = request.state.userMetadata.get("id")
         logger.debug(f"Adding to cart for user:{userId}")
-        cartItem = {
-            "id": str(ObjectId()),
-            "userId": userId,
-            "productId": payload.productId,
-            "quantity": payload.quantity,
-            "createdAt": formatDateTime(),
-        }
+        cartItem = payload.model_dump()
+        cartItem.update({"id": str(ObjectId()), "userId": userId, "createdAt": formatDateTime()})
         addToCartDb(cartItem)
         logger.info(f"cartItem added sussessfully")
         return returnResponse(2060, result=cartItem)
@@ -47,12 +42,8 @@ async def addToWishlist(request: Request, payload: WishlistItemModel):
     try:
         userId = request.state.userMetadata.get("id")
         logger.debug(f"Adding to wishlist for user:{userId}")
-        wishlistItem = {
-            "id": str(ObjectId()),
-            "userId": userId,
-            "productId": payload.productId,
-            "createdAt": formatDateTime(),
-        }
+        wishlistItem = payload.model_dump()
+        wishlistItem.update({"id": str(ObjectId()), "userId": userId, "createdAt": formatDateTime()})
         addToWishlistDb(wishlistItem)
         logger.info(f"wishlistItem added successfully,user:{userId}")
         return returnResponse(2070, result=wishlistItem)

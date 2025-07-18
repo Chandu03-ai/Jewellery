@@ -1,26 +1,18 @@
 # routers/productRouter.py
 from typing import List, Optional
-from bson import ObjectId
 from fastapi import APIRouter, Body, Request, Query
-from Models.productModel import ProductImportModel
-from Database.productDb import insertProductToDb, getProductsFromDb, getProductFromDb, updateProductInDb, deleteProductFromDb, deleteProductsFromDb, insertImportHistoryToDb
-from Database.categoryDb import insertCategoryIfNotExists
-from Utils.utils import hasRequiredRole
-from yensiDatetime.yensiDatetime import formatDateTime
-from Models.userModel import UserRoles
+from Database.productDb import getProductsFromDb, getProductFromDb, updateProductInDb
 from yensiAuthentication import logger
-from Utils.slugify import slugify
 from ReturnLog.logReturn import returnResponse
 
-router = APIRouter(prefix="/public",tags=["Products"])
-
+router = APIRouter(prefix="/public", tags=["Products"])
 
 
 @router.get("/products")
 async def getProducts():
     try:
         logger.debug(f"fetching all products")
-        products = list(getProductsFromDb())
+        products = list(getProductsFromDb({"isDeleted": False}))
 
         for product in products:
             noOfProducts = product.get("noOfProducts", 0)
@@ -42,7 +34,7 @@ async def filterProducts(category: Optional[str] = None, priceMin: Optional[floa
 
     try:
         logger.debug(f"filterProducts function started")
-        query = {}
+        query = {"isDeleted": False}
         if category:
             query["category"] = category
         if priceMin is not None or priceMax is not None:
@@ -62,26 +54,11 @@ async def filterProducts(category: Optional[str] = None, priceMin: Optional[floa
         return returnResponse(2004)
 
 
-@router.get("/products/{slug}")
-async def getProductBySlug(slug: str):
-    try:
-        logger.debug(f"getProductBySlug function started ")
-        product = getProductFromDb({"slug": slug})
-        if not product:
-            return returnResponse(2010, result=None)
-        logger.info(f"Product fetched successfully by slug: {slug}")
-        return returnResponse(2005, result=product)
-    except Exception as e:
-        logger.error(f"Error fetching product by slug: {e}")
-        return returnResponse(2004)
-
-
-
 @router.get("/products/featured")
 async def getFeaturedProducts():
     try:
         logger.debug("Fetching featured products")
-        featured = list(getProductsFromDb({"featured": True}))
+        featured = list(getProductsFromDb({"featured": True, "isDeleted": False}))
         return returnResponse(2085, result=featured)
     except Exception as e:
         logger.error(f"Error fetching featured products: {e}")
@@ -92,7 +69,7 @@ async def getFeaturedProducts():
 async def getProductsByTag(tag: str):
     try:
         logger.debug(f"Fetching products with tag: {tag}")
-        taggedProducts = list(getProductsFromDb({"tags": tag}))
+        taggedProducts = list(getProductsFromDb({"tags": tag, "IsDeleted": False}))
         return returnResponse(2087, result=taggedProducts)
     except Exception as e:
         logger.error(f"Error fetching products by tag: {e}")
@@ -103,15 +80,16 @@ async def getProductsByTag(tag: str):
 async def searchProducts(q: str):
     try:
         logger.debug(f"Searching products for query: {q}")
-        query = {"$or": [
-            {"name": {"$regex": q, "$options": "i"}},
-            {"category": {"$regex": q, "$options": "i"}},
-            {"tags": {"$in": [q]}},
-        ]}
+        query = {
+            "$or": [
+                {"isDeleted": False},
+                {"name": {"$regex": q, "$options": "i"}},
+                {"category": {"$regex": q, "$options": "i"}},
+                {"tags": {"$in": [q]}},
+            ]
+        }
         products = list(getProductsFromDb(query))
-        suggestions = [
-            {"query": q, "type": "product", "count": len(products)}
-        ]
+        suggestions = [{"query": q, "type": "product", "count": len(products)}]
         return returnResponse(2089, result={"products": products, "total": len(products), "suggestions": suggestions})
     except Exception as e:
         logger.error(f"Search failed: {e}")
@@ -122,15 +100,16 @@ async def searchProducts(q: str):
 async def getSearchSuggestions(q: str):
     try:
         logger.debug(f"Getting suggestions for query: {q}")
-        query = {"$or": [
-            {"name": {"$regex": q, "$options": "i"}},
-            {"category": {"$regex": q, "$options": "i"}},
-            {"tags": {"$in": [q]}},
-        ]}
+        query = {
+            "$or": [
+                {"isDeleted": False},
+                {"name": {"$regex": q, "$options": "i"}},
+                {"category": {"$regex": q, "$options": "i"}},
+                {"tags": {"$in": [q]}},
+            ]
+        }
         products = list(getProductsFromDb(query))
-        suggestions = [
-            {"query": q, "type": "product", "count": len(products)}
-        ]
+        suggestions = [{"query": q, "type": "product", "count": len(products)}]
         return returnResponse(2091, result=suggestions)
     except Exception as e:
         logger.error(f"Suggestion generation failed: {e}")
@@ -138,26 +117,15 @@ async def getSearchSuggestions(q: str):
 
 
 
-
-# Stub endpoints for reviews (assume models and DB logic are elsewhere)
-@router.get("/products/{productId}/reviews")
-async def getProductReviews(productId: str):
+@router.get("/products/{slug}")
+async def getProductBySlug(slug: str):
     try:
-        # Dummy fetch logic placeholder
-        logger.debug(f"Fetching reviews for product [{productId}]")
-        return returnResponse(2095, result=[])
+        logger.debug(f"getProductBySlug function started ")
+        product = getProductFromDb({"slug": slug, "isDeleted": False})
+        if not product:
+            return returnResponse(2010, result=None)
+        logger.info(f"Product fetched successfully by slug: {slug}")
+        return returnResponse(2005, result=product)
     except Exception as e:
-        logger.error(f"Failed to fetch reviews for [{productId}]: {e}")
-        return returnResponse(2096)
-
-
-@router.post("/products/{productId}/reviews")
-async def addProductReview(request: Request, productId: str, payload: dict = Body(...)):
-    try:
-        # Dummy insert logic placeholder
-        userId = request.state.userMetadata.get("id")
-        logger.debug(f"User [{userId}] adding review to product [{productId}]")
-        return returnResponse(2097, result=payload)
-    except Exception as e:
-        logger.error(f"Failed to add review: {e}")
-        return returnResponse(2098)
+        logger.error(f"Error fetching product by slug: {e}")
+        return returnResponse(2004)

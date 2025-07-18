@@ -2,7 +2,7 @@
 from bson import ObjectId
 from fastapi import APIRouter, Body, Request, File, UploadFile, HTTPException
 from Models.productModel import ProductImportModel
-from Database.productDb import deleteProductFromDb, deleteProductsFromDb, insertProductToDb, getProductFromDb, updateProductInDb, insertImportHistoryToDb
+from Database.productDb import getProductsFromDb, updateManyProductsInDb, insertProductToDb, getProductFromDb, updateProductInDb, insertImportHistoryToDb
 from Utils.utils import buildCategoryDocument, hasRequiredRole, buildTagDocument
 from yensiDatetime.yensiDatetime import formatDateTime
 from Models.userModel import UserRoles
@@ -12,6 +12,8 @@ from ReturnLog.logReturn import returnResponse
 import json
 import pandas as pd
 from io import BytesIO
+
+from Razor_pay.Database.ordersDb import getAllOrders
 
 router = APIRouter(prefix="/admin", tags=["Admin-Products"])
 
@@ -44,7 +46,7 @@ async def importProductsFromFile(request: Request, file: UploadFile = File(...))
         cleanedRecords = []
 
         for rec in records:
-            # Clean list fields
+            # Handle list fields (semi-colon separated)
             for field in listFields:
                 value = rec.get(field)
                 if isinstance(value, str):
@@ -52,17 +54,42 @@ async def importProductsFromFile(request: Request, file: UploadFile = File(...))
                 elif value is None:
                     rec[field] = []
 
-            # Parse JSON string fields
+            if "tags" in rec and isinstance(rec["tags"], str):
+                tagList = [tag.strip() for tag in rec["tags"].split(";") if tag.strip()]
+                colorList = [color.strip() for color in rec.get("tagColors", "").split(";")]
+            
+                rec["tags"] = []
+                for i, tag in enumerate(tagList):
+                    tagData = {"name": tag}
+                    if i < len(colorList):
+                        tagData["color"] = colorList[i]
+                    rec["tags"].append(tagData)
+
+            # Handle JSON fields if they exist
             for field in jsonFields:
                 value = rec.get(field)
                 if isinstance(value, str):
                     try:
                         rec[field] = json.loads(value)
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"[FIELD_PARSE_FAIL] Failed to parse {field} for product '{rec.get('name', 'Unknown')}': {e}")
+                    except json.JSONDecodeError:
+                        logger.warning(f"[PARSING_WARNING] Invalid JSON in field '{field}' for product {rec.get('name')}. Using fallback.")
                         rec[field] = {}
-                elif value is None:
-                    rec[field] = {}
+
+            # Build specifications manually from dot-notated columns
+            rec["specifications"] = {
+                "material": rec.pop("specifications.material", ""),
+                "weight": rec.pop("specifications.weight", ""),
+                "dimensions": rec.pop("specifications.dimensions", ""),
+                "gemstone": rec.pop("specifications.gemstone", ""),
+            }
+
+            # Build dimensions manually from dot-notated columns
+            rec["dimensions"] = {
+                "length": float(rec.pop("dimensions.length", 0) or 0),
+                "width": float(rec.pop("dimensions.width", 0) or 0),
+                "height": float(rec.pop("dimensions.height", 0) or 0),
+                "weight": float(rec.pop("dimensions.weight", 0) or 0),
+            }
 
             cleanedRecords.append(rec)
 
@@ -99,7 +126,7 @@ async def importProductsFromFile(request: Request, file: UploadFile = File(...))
                 updated += 1
                 logger.info(f"[PRODUCT_UPDATED] {product.name} (slug: {slug}) - Quantity updated.")
             else:
-                productDict.update({"id": str(ObjectId()), "createdBy": userId, "createdAt": formatDateTime()})
+                productDict.update({"id": str(ObjectId()), "createdBy": userId, "createdAt": formatDateTime(), "isDeleted": False})
                 insertProductToDb(productDict)
                 imported += 1
                 logger.info(f"[PRODUCT_INSERTED] {product.name} (slug: {slug}) - New product added.")
@@ -118,7 +145,7 @@ async def importProductsFromFile(request: Request, file: UploadFile = File(...))
     except Exception as e:
         logger.exception(f"[HISTORY_ERROR] Failed to record import history - {e}")
 
-    logger.info(f"[IMPORT_COMPLETE] User [{userId}] finished import. " f"Total: {total}, Inserted: {imported}, Updated: {updated}, Failed: {failed}")
+    logger.info(f"[IMPORT_COMPLETE] User [{userId}] finished import. Total: {total}, Inserted: {imported}, Updated: {updated}, Failed: {failed}")
     return returnResponse(2001, result=processedProducts)
 
 
@@ -132,7 +159,7 @@ async def updateProductByIdEndpoint(productId: str, request: Request, payload: P
             return returnResponse(2000)
         logger.info(f"User [{userId}] is attempting to update product with ID: {productId}")
 
-        existing = getProductFromDb({"id": productId})
+        existing = getProductFromDb({"id": productId, "isDeleted": False})
         if not existing:
             logger.warning(f"No product found with ID: {productId}")
             return returnResponse(2016, message="Product not found for update.")
@@ -158,15 +185,15 @@ async def updateProductByIdEndpoint(productId: str, request: Request, payload: P
 
 @router.delete("/product/deleteProducts")
 async def deleteProducts(request: Request):
-
     try:
-        logger.debug(f"deleteProducts function started")
+        logger.debug("deleteProducts function started")
         if not hasRequiredRole(request, [UserRoles.Admin.value]):
             logger.warning("Unauthorized access attempt to delete products")
             return returnResponse(2000)
-        deleted_count = deleteProductsFromDb({})
-        logger.info(f"deleted products successfully")
-        return returnResponse(2008 if deleted_count else 2007, result={"deleted": deleted_count})
+        result = updateManyProductsInDb({"isDeleted": False}, {"isDeleted": True})
+        deletedCount = result.modified_count
+        logger.info(f"Soft-deleted {deletedCount} products")
+        return returnResponse(2008 if deletedCount else 2007, result={"deleted": deletedCount})
     except Exception as e:
         logger.error(f"Error deleting products: {e}")
         return returnResponse(2009)
@@ -175,20 +202,17 @@ async def deleteProducts(request: Request):
 @router.delete("/product/{productId}")
 async def deleteProductById(request: Request, productId: str):
     try:
-        logger.debug(f"deleteProductById function started for productId: {productId}")
-        userId = request.state.userMetadata.get("id")
+        logger.debug(f"Deleting product: {productId}")
         if not hasRequiredRole(request, [UserRoles.Admin.value]):
-            logger.warning(f"Unauthorized access attempt by user [{userId}] to delete product [{productId}]")
             return returnResponse(2000)
-        result = deleteProductFromDb({"id": productId})
-        if result.deleted_count:
-            logger.info(f"Product [{productId}] deleted by user [{userId}]")
-            return returnResponse(2015, result={"deleted": 1})
-        else:
-            logger.info(f"Product [{productId}] not found for deletion by user [{userId}]")
-            return returnResponse(2016, result={"deleted": 0})
+        product = getProductFromDb({"id": productId, "isDeleted": False})
+        if not product:
+            logger.warning(f"Product with ID :{productId} not found or already deleted")
+            return returnResponse(2016)
+        result = updateProductInDb({"id": productId}, {"isDeleted": True})
+        return returnResponse(2015 if result.modified_count else 2016, result={"deleted": result.modified_count})
     except Exception as e:
-        logger.error(f"Error deleting product [{productId}] by user [{userId}]: {str(e)}")
+        logger.error(f"Error deleting product [{productId}]: {e}")
         return returnResponse(2017)
 
 
@@ -203,7 +227,7 @@ async def updateStock(request: Request, productId: str, payload: dict = Body(...
         quantity = payload.get("quantity", 0)
         stockStatus = quantity > 0
 
-        updateProductInDb({"id": productId}, {"noOfProducts": quantity, "inStock": stockStatus})
+        updateProductInDb({"id": productId, "isDeleted": False}, {"noOfProducts": quantity, "inStock": stockStatus})
         logger.info(f"Stock updated for product [{productId}] to {quantity} by user [{userId}]")
         return returnResponse(2093)
     except Exception as e:
@@ -229,15 +253,15 @@ async def createProduct(request: Request, payload: ProductImportModel):
         productDict = payload.model_dump()
         productDict.update({"slug": slug, "updatedAt": formatDateTime()})
 
-        existing = getProductFromDb({"slug": slug})
+        existing = getProductFromDb({"slug": slug, "isDeleted": False})
 
         if existing:
             productDict["id"] = existing["id"]
             productDict["noOfProducts"] = existing.get("noOfProducts", 0) + payload.noOfProducts
-            updateProductInDb({"slug": slug}, productDict)
+            updateProductInDb({"slug": slug, "isDeleted": False}, productDict)
             logger.info(f"Updated existing product quantity: {payload.name} (slug: {slug})")
         else:
-            productDict.update({"id": str(ObjectId()), "createdBy": userId, "createdAt": formatDateTime()})
+            productDict.update({"id": str(ObjectId()), "createdBy": userId, "createdAt": formatDateTime(), "isDeleted": False})
             insertProductToDb(productDict)
             logger.info(f"Inserted new product: {payload.name} (slug: {slug})")
 
@@ -262,3 +286,75 @@ async def createProduct(request: Request, payload: ProductImportModel):
     except Exception as e:
         logger.error(f"[IMPORT_ERROR] Error importing product [{payload.name}]: {str(e)}")
         return returnResponse(2104)
+
+
+@router.get("/stats/products")
+async def getProductStats(request: Request):
+    try:
+        userId = request.state.userMetadata.get("id")
+
+        if not hasRequiredRole(request, [UserRoles.Admin.value]):
+            logger.warning(f"Unauthorized access attempt by user [{userId}] to fetch product stats.")
+            return returnResponse(2000)
+
+        logger.info(f"Fetching product stats for admin [{userId}]")
+
+        # Get non-deleted products
+        products = list(getProductsFromDb({"isDeleted": False}))
+
+        total = len(products)
+        inStock = sum(1 for p in products if p.get("inStock") is True)
+        outOfStock = sum(1 for p in products if p.get("inStock") is False)
+        featured = sum(1 for p in products if p.get("featured") is True)
+
+        # Category-wise counts
+        categories = {}
+        for p in products:
+            category = p.get("category", "Uncategorized")
+            categories[category] = categories.get(category, 0) + 1
+
+        stats = {
+            "totalProducts": total,
+            "inStock": inStock,
+            "outOfStock": outOfStock,
+            "featured": featured,
+            "categories": categories,
+        }
+
+        logger.info(f"Product stats retrieved by admin [{userId}]")
+        return returnResponse(2106, result=stats)
+
+    except Exception as e:
+        logger.error(f"[STATS_ERROR] Error retrieving product stats: {str(e)}")
+        return returnResponse(2107)
+
+
+@router.get("/stats/orders")
+async def getOrderStats(request: Request):
+    try:
+        userId = request.state.userMetadata.get("id")
+
+        # Authorization check
+        if not hasRequiredRole(request, [UserRoles.Admin.value]):
+            logger.warning(f"Unauthorized access attempt by user [{userId}] to fetch order stats.")
+            return returnResponse(2000)
+
+        logger.info(f"Fetching order stats for admin [{userId}]")
+
+        # Fetch all non-deleted orders
+        orders = list(getAllOrders({"isDeleted": False}))
+
+        # Compute stats
+        totalOrders = len(orders)
+        pendingOrders = sum(1 for order in orders if order.get("status") == "pending")
+        completedOrders = sum(1 for order in orders if order.get("status") == "completed")
+        totalRevenue = sum(order.get("amount", 0) for order in orders if isinstance(order.get("amount"), (int, float)))
+
+        stats = {"totalOrders": totalOrders, "pendingOrders": pendingOrders, "completedOrders": completedOrders, "totalRevenue": totalRevenue}
+
+        logger.info(f"Order stats retrieved by admin [{userId}]")
+        return returnResponse(2018, result=stats)
+
+    except Exception as e:
+        logger.error(f"[STATS_ERROR] Error retrieving order stats: {str(e)}")
+        return returnResponse(2019)

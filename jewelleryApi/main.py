@@ -1,21 +1,24 @@
+import os
 from fastapi import FastAPI
-from yensiAuthentication import logger,yensiloginRouter,yensiSsoRouter
-from Router import generalRouter,productRouter,categoryRouter,cartRouter,reviewRouter,tagRouter,variantRouter,utilityRouter,adminProductRouter,adminCategoryRouter
-from Razor_pay.Routers import customerService,orderService,paymentService,webhookService
+from yensiAuthentication import logger, yensiloginRouter, yensiSsoRouter
+from Router import generalRouter, productRouter, categoryRouter, cartRouter, reviewRouter, tagRouter, variantRouter, utilityRouter, adminProductRouter, adminCategoryRouter, adminTagRouter
 from fastapi.middleware.cors import CORSMiddleware
 from yensiAuthentication.authenticate import KeycloakMiddleware
 import uvicorn
+from fastapi.staticfiles import StaticFiles
+from constants import staticFilesPath
+from Razor_pay.Routers import customerService, orderService, paymentService, webhookService
 
 # Start the FastAPI application
 logger.info("FastAPI application starting...")
 
-
+static_path = os.getenv("STATIC_PATH", staticFilesPath)
 # Create FastAPI app
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,7 +26,7 @@ app.add_middleware(
 
 # Add Keycloak middleware for authentication
 app.add_middleware(KeycloakMiddleware)
-
+app.mount("/static", StaticFiles(directory=static_path), name="static")
 # Include authentication router
 app.include_router(yensiloginRouter)
 app.include_router(yensiSsoRouter)
@@ -41,9 +44,9 @@ app.include_router(reviewRouter.router)
 app.include_router(utilityRouter.router)
 app.include_router(adminProductRouter.router)
 app.include_router(adminCategoryRouter.router)
-
+app.include_router(adminTagRouter.router)
 
 
 # run the FastAPI application
-if __name__=="__main__":
+if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
