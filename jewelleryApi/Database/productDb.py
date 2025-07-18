@@ -14,6 +14,9 @@ def getProductFromDb(query: dict, projection: dict = {"_id": 0}):
 def updateProductInDb(query: dict, updateData: dict):
     return productsCollection.update_one(query, {"$set": updateData})
 
+def updateManyProductsInDb(query: dict, updateData: dict):
+    return productsCollection.update_many(query, {"$set": updateData})
+
 def deleteProductFromDb(query: dict):
     return productsCollection.delete_one(query)
 

@@ -1,11 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pymongo import MongoClient
 import requests
-from constants import mongoUrl,keycloakBaseUrl,keycloakRealm,keycloakClientId,keycloakClientSecret
+from constants import mongoUrl, keycloakBaseUrl, keycloakRealm, keycloakClientId, keycloakClientSecret
 from yensiAuthentication.yensiConfig import logger
+from yensiAuthentication.mongoData import getAllUsers
+from Models.userModel import UserRoles
+from ReturnLog.logReturn import returnResponse
+from Utils.utils import hasRequiredRole
+
 router = APIRouter()
 
 mongoClient = MongoClient(mongoUrl)
+
 
 @router.get("/health")
 async def healthCheck():
@@ -30,11 +36,7 @@ async def healthCheck():
         # Keycloak Client Verification
         try:
             tokenEndpoint = f"{keycloakBaseUrl}/realms/{keycloakRealm}/protocol/openid-connect/token"
-            payload = {
-                "client_id": keycloakClientId,
-                "client_secret": keycloakClientSecret,
-                "grant_type": "client_credentials"
-            }
+            payload = {"client_id": keycloakClientId, "client_secret": keycloakClientSecret, "grant_type": "client_credentials"}
             response = requests.post(tokenEndpoint, data=payload, timeout=3)
 
             if response.status_code == 200:
@@ -58,3 +60,24 @@ async def healthCheck():
         logger.critical(f"Unexpected health check failure: {str(e)}", exc_info=True)
         return {"status": "Critical", "mongodb": "Unknown", "keycloak": "Unknown"}
 
+
+@router.get("/users")
+async def getAllUser(request: Request):
+    try:
+        requiredRoles = [UserRoles.Admin.value]
+        if not hasRequiredRole(request, requiredRoles):
+            logger.warning("unAuthorized access attempt ")
+            return returnResponse(2000)
+
+        logger.info("Fetching all users.")
+        users = list(getAllUsers({}))
+        if not users:
+            logger.warning("No users found.")
+            return returnResponse(2111)
+
+        result = [{**{key: value for key, value in doc.items() if key not in ("_id", "keycloakId")}} for doc in users]
+        logger.info(f"users retrieved successfully")
+        return returnResponse(2110, result)
+    except Exception as e:
+        logger.error(f"Error fetching users: {str(e)}", exc_info=True)
+        return returnResponse(2112)

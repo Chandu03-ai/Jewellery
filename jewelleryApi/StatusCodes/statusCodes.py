@@ -103,13 +103,18 @@ CUSTOM_STATUS_CODES = {
     2096: {"code": 2096, "message": "Error fetching product reviews."},
     2097: {"code": 2097, "message": "Product review added successfully."},
     2098: {"code": 2098, "message": "Error adding product review."},
-
     2099: {"code": 2099, "message": "No files were uploaded successfully"},
     2100: {"code": 2100, "message": "Files uploaded successfully."},
     2101: {"code": 2101, "message": "Error occured while uploading files."},
-
-
     2102: {"code": 2102, "message": "Failed to parse file. Ensure the format is valid and field values are correct."},
     2103: {"code": 2103, "message": "Product created successfully."},
     2104: {"code": 2104, "message": "Unexpected error occurred while creating products."},
+    2105: {"code": 2105, "message": "category not found"},
+    2106: {"code": 2106, "message": "Product stats retrieved by admin"},
+    2107: {"code": 2107, "message": "[STATS_ERROR] Error retrieving product stats"},
+    2108: {"code": 2108, "message": "Order stats successfully retrieved by admin "},
+    2109: {"code": 2109, "message": "Error occured while retrieving order stats"},
+    2110: {"code": 2110, "message": "successessfully retrived users."},
+    2111: {"code": 2111, "message": "users not found."},
+    2112: {"code": 2112, "message": "Error occured while fetching Users , Please try again."},
 }
