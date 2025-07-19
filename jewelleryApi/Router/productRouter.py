@@ -1,6 +1,6 @@
 # routers/productRouter.py
 from typing import List, Optional
-from fastapi import APIRouter, Body, Request, Query
+from fastapi import APIRouter, Query
 from Database.productDb import getProductsFromDb, getProductFromDb, updateProductInDb
 from yensiAuthentication import logger
 from ReturnLog.logReturn import returnResponse
@@ -114,7 +114,6 @@ async def getSearchSuggestions(q: str):
     except Exception as e:
         logger.error(f"Suggestion generation failed: {e}")
         return returnResponse(2092)
-
 
 
 @router.get("/products/{slug}")
