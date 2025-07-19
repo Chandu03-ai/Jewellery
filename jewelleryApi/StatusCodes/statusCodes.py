@@ -41,6 +41,13 @@ CUSTOM_STATUS_CODES = {
 
 
 
+    1800: {"code": 1800, "message": "Shipment created successfully."},
+    1801: {"code": 1801, "message": "Shipment cancelled."},
+    1802: {"code": 1802, "message": "Label fetched successfully."},
+    1803: {"code": 1803, "message": "Tracking info retrieved."},
+    1804: {"code": 1804, "message": "Shipment history returned."},
+    1805: {"code": 1805, "message": "AWB number not found."},
+    1806: {"code": 1806, "message": "Error occurred while processing request."},
 
 
 

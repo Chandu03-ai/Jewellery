@@ -1,4 +1,4 @@
-from Database.MongoData import productsCollection, importHistoryCollection
+from Database.MongoData import productsCollection
 
 # ───── Product Collection Methods ───── #
 
@@ -23,10 +23,4 @@ def deleteProductFromDb(query: dict):
 def deleteProductsFromDb(query: dict):
     return productsCollection.delete_many(query).deleted_count
 
-# ───── Import History Methods ───── #
 
-def insertImportHistoryToDb(data: dict):
-    return importHistoryCollection.insert_one(data)
-
-def getImportHistoryFromDb():
-    return importHistoryCollection.find({}, {"_id": 0}).sort("timestamp", -1)
