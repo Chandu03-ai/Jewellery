@@ -36,10 +36,18 @@ CUSTOM_STATUS_CODES = {
     1534: {"code": 1534, "message": "Payment verification successful."},
     1535: {"code": 1535, "message": "Payment verification failed: invalid signature."},
     1536: {"code": 1536, "message": "Error during payment verification."},
+
+
+
+
+
+
+
+
     2000: {"code": 2000, "message": "Unauthorized access to import products."},
-    2001: {"code": 2001, "message": "Products imported successfully."},
-    2002: {"code": 2002, "message": "Unexpected error occurred while getting products."},
-    2003: {"code": 2003, "message": "File validation failed."},
+    2001: {"code": 2001, "message": "Products created successfully."},
+    2002: {"code": 2002, "message": "Unexpected error occurred while creating products."},
+    2003: {"code": 2003, "message": "product not found."},
     2004: {"code": 2004, "message": "Unexpected error occurred during product operation."},
     2005: {"code": 2005, "message": "Products fetched successfully."},
     2006: {"code": 2006, "message": "No products found."},
@@ -117,4 +125,9 @@ CUSTOM_STATUS_CODES = {
     2110: {"code": 2110, "message": "successessfully retrived users."},
     2111: {"code": 2111, "message": "users not found."},
     2112: {"code": 2112, "message": "Error occured while fetching Users , Please try again."},
+
+
+    2113: {"code": 2113, "message": "InvalidID ,No category found , Please try again."},
+    2114: {"code": 2114, "message": "Category updated successfully:"},
+    2115: {"code": 2115, "message": "Error updating category,Please try again"},
 }

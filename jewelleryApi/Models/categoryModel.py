@@ -1,15 +1,14 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
 
 
 class CategoryModel(BaseModel):
     name: str
-    description: Optional[str] = ""
+    slug: str
+    image: Optional[str] = None  # icon/banner
+
+
+class UpdateCategoryModel(BaseModel):
+    name: Optional[str] = None
     slug: Optional[str] = None
-    image: Optional[str] = ""  # URL or path
-    parentCategory: Optional[str] = None  # ObjectId as string
-    sortOrder: Optional[int] = 0
-    isActive: Optional[bool] = True
-    metaTitle: Optional[str] = ""
-    metaDescription: Optional[str] = ""
-    productCount: Optional[int] = 0
+    image: Optional[str] = None

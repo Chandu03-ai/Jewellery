@@ -2,7 +2,7 @@
 
 from bson import ObjectId
 from fastapi import APIRouter, Request
-from Models.categoryModel import CategoryModel
+from Models.categoryModel import CategoryModel, UpdateCategoryModel
 from Database.categoryDb import insertCategoryIfNotExists, getCategoryFromDb, updateCategoryInDb
 from Utils.utils import hasRequiredRole
 from yensiDatetime.yensiDatetime import formatDateTime
@@ -35,21 +35,14 @@ async def createCategory(request: Request, payload: CategoryModel):
             "id": str(ObjectId()),
             "name": payload.name,
             "slug": slug,
-            "description": payload.description,
             "image": payload.image,
-            "parentCategory": payload.parentCategory,
-            "sortOrder": payload.sortOrder,
-            "isActive": payload.isActive,
-            "metaTitle": payload.metaTitle,
-            "metaDescription": payload.metaDescription,
-            "productCount": payload.productCount,
             "createdAt": formatDateTime(),
             "updatedAt": formatDateTime(),
             "isDeleted": False,
         }
 
-        insertCategoryIfNotExists(categoryData)  # Optional fallback
-        categoryData.pop("_id", None)  # Remove MongoDB ObjectId field if present
+        insertCategoryIfNotExists(categoryData)
+        categoryData.pop("_id", None)
         logger.info(f"Category created successfully: {payload.name}")
         return returnResponse(2020, result=categoryData)
 
@@ -59,13 +52,13 @@ async def createCategory(request: Request, payload: CategoryModel):
 
 
 @router.delete("/categories/{id}")
-async def deleteCategory(id: str, request: Request):
+async def deleteCategory(request: Request, id: str):
     try:
         logger.debug(f"deleteCategorey function started for id:{id}")
         if not hasRequiredRole(request, [UserRoles.Admin.value]):
             logger.warning("Unauthorized access to delete category")
             return returnResponse(2000)
-        category = getCategoryFromDb({"id": id, "isdeleted": False})
+        category = getCategoryFromDb({"id": id, "isDeleted": False})
         if not category:
             logger.warning(f"category not found for id:{id}")
             return returnResponse(2105)
@@ -82,3 +75,32 @@ async def deleteCategory(id: str, request: Request):
     except Exception as e:
         logger.error(f"Error deleting category: {e}")
         return returnResponse(2026)
+
+
+@router.put("/categories/{categoryId}")
+async def updateCategory(request: Request, categoryId: str, payload: UpdateCategoryModel):
+    try:
+        logger.info(f"updateCategory called for ID: {categoryId}")
+        if not hasRequiredRole(request, [UserRoles.Admin.value]):
+            logger.warning("Unauthorized access to update category")
+            return returnResponse(2000)
+        existing = getCategoryFromDb({"id": categoryId, "isDeleted": False})
+        if not existing:
+            logger.info(f"No category found with ID: {categoryId}")
+            return returnResponse(2113)
+        updateData = {}
+        if payload.name:
+            updateData["name"] = payload.name
+        if payload.slug or payload.name:
+            updateData["slug"] = slugify(payload.slug or payload.name)
+        if payload.image is not None:
+            updateData["image"] = payload.image
+        updateData["updatedAt"] = formatDateTime()
+        updateCategoryInDb({"id": categoryId}, updateData)
+        updated = getCategoryFromDb({"id": categoryId})
+        updated.pop("_id", None)
+        logger.info(f"Category updated successfully: {categoryId}")
+        return returnResponse(2114, result=updated)
+    except Exception as e:
+        logger.error(f"Error updating category [{categoryId}]: {e}")
+        return returnResponse(2115)

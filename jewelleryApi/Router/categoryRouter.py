@@ -12,7 +12,7 @@ router = APIRouter(prefix="/public", tags=["Categories"])
 async def getCategories():
     try:
         logger.debug(f"fetching all categories")
-        categories = list(getCategoriesFromDb({"isDeleted":False,"isActive":True}))
+        categories = list(getCategoriesFromDb({"isDeleted": False}))
         logger.info(f"fetched all categories successfully")
         return returnResponse(2021, result=categories or [])
     except Exception as e:
