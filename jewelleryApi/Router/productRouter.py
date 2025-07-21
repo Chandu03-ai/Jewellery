@@ -1,7 +1,6 @@
 # routers/productRouter.py
-from typing import List, Optional
-from fastapi import APIRouter, Query
-from Database.productDb import getProductsFromDb, getProductFromDb, updateProductInDb
+from fastapi import APIRouter
+from Database.productDb import getProductsFromDb, getProductFromDb
 from yensiAuthentication import logger
 from ReturnLog.logReturn import returnResponse
 
@@ -45,19 +44,11 @@ async def getProducts():
 #         return returnResponse(2004)
 
 
-
 @router.get("/products/search")
 async def searchProducts(q: str):
     try:
         logger.debug(f"Searching products for query: {q}")
-        query = {
-            "$or": [
-                {"isDeleted": False},
-                {"name": {"$regex": q, "$options": "i"}},
-                {"category": {"$regex": q, "$options": "i"}},
-                {"tags": {"$in": [q]}},
-            ]
-        }
+        query = {"$or": [{"isDeleted": False}, {"name": {"$regex": q, "$options": "i"}}, {"category": {"$regex": q, "$options": "i"}}]}
         products = list(getProductsFromDb(query))
         suggestions = [{"query": q, "type": "product", "count": len(products)}]
         return returnResponse(2089, result={"products": products, "total": len(products), "suggestions": suggestions})
@@ -70,14 +61,7 @@ async def searchProducts(q: str):
 async def getSearchSuggestions(q: str):
     try:
         logger.debug(f"Getting suggestions for query: {q}")
-        query = {
-            "$or": [
-                {"isDeleted": False},
-                {"name": {"$regex": q, "$options": "i"}},
-                {"category": {"$regex": q, "$options": "i"}},
-                {"tags": {"$in": [q]}},
-            ]
-        }
+        query = {"$or": [{"isDeleted": False}, {"name": {"$regex": q, "$options": "i"}}, {"category": {"$regex": q, "$options": "i"}}]}
         products = list(getProductsFromDb(query))
         suggestions = [{"query": q, "type": "product", "count": len(products)}]
         return returnResponse(2091, result=suggestions)

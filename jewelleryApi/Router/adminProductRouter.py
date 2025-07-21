@@ -122,43 +122,37 @@ async def deleteProductById(request: Request, productId: str):
         return returnResponse(2017)
 
 
-@router.put("/product/{productId}/stock")
-async def updateStock(request: Request, productId: str, payload: dict = Body(...)):
-    try:
-        userId = request.state.userMetadata.get("id")
-        if not hasRequiredRole(request, [UserRoles.Admin.value]):
-            logger.warning(f"Unauthorized stock update by user [{userId}]")
-            return returnResponse(2000)
+# @router.put("/product/{productId}/stock")
+# async def updateStock(request: Request, productId: str, payload: dict = Body(...)):
+#     try:
+#         userId = request.state.userMetadata.get("id")
+#         if not hasRequiredRole(request, [UserRoles.Admin.value]):
+#             logger.warning(f"Unauthorized stock update by user [{userId}]")
+#             return returnResponse(2000)
 
-        quantity = payload.get("quantity", 0)
-        stockStatus = quantity > 0
+#         quantity = payload.get("quantity", 0)
+#         stockStatus = quantity > 0
 
-        updateProductInDb({"id": productId, "isDeleted": False}, {"noOfProducts": quantity, "inStock": stockStatus})
-        logger.info(f"Stock updated for product [{productId}] to {quantity} by user [{userId}]")
-        return returnResponse(2093)
-    except Exception as e:
-        logger.error(f"Error updating stock for product [{productId}]: {e}")
-        return returnResponse(2094)
+#         updateProductInDb({"id": productId, "isDeleted": False}, {"noOfProducts": quantity, "inStock": stockStatus})
+#         logger.info(f"Stock updated for product [{productId}] to {quantity} by user [{userId}]")
+#         return returnResponse(2093)
+#     except Exception as e:
+#         logger.error(f"Error updating stock for product [{productId}]: {e}")
+#         return returnResponse(2094)
 
 
 @router.get("/stats/products")
 async def getProductStats(request: Request):
     try:
         userId = request.state.userMetadata.get("id")
-
         if not hasRequiredRole(request, [UserRoles.Admin.value]):
             logger.warning(f"Unauthorized access attempt by user [{userId}] to fetch product stats.")
             return returnResponse(2000)
-
         logger.info(f"Fetching product stats for admin [{userId}]")
-
         # Get non-deleted products
         products = list(getProductsFromDb({"isDeleted": False}))
-
         total = len(products)
-        inStock = sum(1 for p in products if p.get("inStock") is True)
-        outOfStock = sum(1 for p in products if p.get("inStock") is False)
-        featured = sum(1 for p in products if p.get("featured") is True)
+        inStock = sum(1 for p in products if p.get("stock") is True)
 
         # Category-wise counts
         categories = {}
@@ -169,14 +163,11 @@ async def getProductStats(request: Request):
         stats = {
             "totalProducts": total,
             "inStock": inStock,
-            "outOfStock": outOfStock,
-            "featured": featured,
             "categories": categories,
         }
 
         logger.info(f"Product stats retrieved by admin [{userId}]")
         return returnResponse(2106, result=stats)
-
     except Exception as e:
         logger.error(f"[STATS_ERROR] Error retrieving product stats: {str(e)}")
         return returnResponse(2107)
