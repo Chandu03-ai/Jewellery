@@ -36,4 +36,11 @@ CUSTOM_STATUS_CODES = {
     1533: {"code": 1533, "message": "Failed to list orders."},
     1553: {"code": 1553, "message": "history fetched successfully."},
     1554: {"code": 1554, "message": "history fetched successfully."},
+    1555: {"code": 1555, "message": "No status found in Razorpay response"},
+    1556: {"code": 1556, "message": "Local order not found."},
+    1557: {"code": 1557, "message": "user order fetched successfully."},
+    1558: {"code": 1558, "message": "Failed to fetch user orders.."},
+    1559: {"code": 1559, "message": "userId not found in request metadata"},
+    1560: {"code": 1560, "message": "orders successfully fetched by Admin"},
+    1561: {"code": 1561, "message": "error occured while fetcing orders by "},
 }

@@ -45,15 +45,19 @@ async def getCart(request: Request):
         return returnResponse(2062)
 
 
-@router.put("/cart/update/{cartId}")
-async def updateCartItem(request: Request, cartId: str, quantity: int):
+@router.put("/cart/update/{id}")
+async def updateCartItem(request: Request, id: str, quantity: int):
     try:
         userId = request.state.userMetadata.get("id")
-        logger.debug(f"Attempting to update cart item [{cartId}] for user [{userId}]")
-        cartItem = getSingleCartDb({"id": cartId, "isDeleted": False})
+        logger.debug(f"Attempting to update cart item [{id}] for user [{userId}]")
+        cartItem = getSingleCartDb({"id": id, "isDeleted": False})
         if not cartItem:
-            logger.warning(f"cart Item not found to update with Id:{cartId}")
-            return returnResponse(2119)
+            logger.info(f" cart checking with productId:{id}")
+            cartItem = getSingleCartDb({"productId": id, "userId": userId, "isDeleted": False})
+            if not cartItem:
+                logger.warning(f"cart Item not found to update with Id:{id}")
+                return returnResponse(2119)
+        cartId = cartItem["id"]
         current_quantity = cartItem.get("quantity", 0)
         newQuantity = current_quantity + quantity  # quantity = -1 here
         if newQuantity < 1:
@@ -69,20 +73,28 @@ async def updateCartItem(request: Request, cartId: str, quantity: int):
         return returnResponse(2121)
 
 
-@router.delete("/cart/remove/{cartId}")
-async def removeCartItem(request: Request, cartId: str):
+@router.delete("/cart/remove/{id}")
+async def removeCartItem(request: Request, id: str):
     try:
         userId = request.state.userMetadata.get("id")
-        logger.debug(f"Attempting to remove cart item [{cartId}] for user [{userId}]")
+        logger.debug(f"Attempting to remove cart item [{id}] for user [{userId}]")
+        cartItem = getSingleCartDb({"id": id, "userId": userId, "isDeleted": False})
+        if not cartItem:
+            logger.info(f"cart checking with productId:{id}")
+            cartItem = getSingleCartDb({"productId": id, "userId": userId, "isDeleted": False})
+            if not cartItem:
+                logger.warning(f"No active cart item found with id or productId [{id}] for user [{userId}]")
+                return returnResponse(2116)
+        cartId = cartItem["id"]
         query = {"id": cartId, "userId": userId, "isDeleted": False}
         updateData = {"isDeleted": True, "deletedAt": formatDateTime()}
         result = updateCartDb(query, updateData)
         if result.modified_count == 0:
             logger.warning(f"No active cart item found with id [{cartId}] for user [{userId}]")
             return returnResponse(2116)
-        cartData = getSingleCartDb({"id": cartId, "isDeleted": False})
+
         logger.info(f"Cart item [{cartId}] marked as deleted for user [{userId}]")
-        return returnResponse(2117, result=cartData)
+        return returnResponse(2117)
     except Exception as e:
         logger.error(f"Error deleting cart item [{cartId}]: {e}", exc_info=True)
         return returnResponse(2118)
