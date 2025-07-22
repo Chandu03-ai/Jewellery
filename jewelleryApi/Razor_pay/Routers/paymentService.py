@@ -29,6 +29,7 @@ def getPaymentHistory(request: Request):
         logger.error(f"Error retrieving payment history: {str(e)}")
         return returnResponse(1554)
 
+
 @router.get("/invoice/{paymentId}")
 def getInvoiceUsingPaymentId(paymentId: str):
     try:
@@ -53,18 +54,17 @@ def verifyPayment(payload: PaymentVerificationPayload):
     try:
         logger.info("Verifying Razorpay payment.")
         body = f"{payload.razorpay_order_id}|{payload.razorpay_payment_id}"  # Replace with actual secret securely
-        generated_signature = hmac.new(
-            key=bytes(razorpaySecret, "utf-8"),
-            msg=bytes(body, "utf-8"),
-            digestmod=hashlib.sha256
-        ).hexdigest()
-
+        generated_signature = hmac.new(key=bytes(razorpaySecret, "utf-8"), msg=bytes(body, "utf-8"), digestmod=hashlib.sha256).hexdigest()
+        orderData = client.order.fetch(payload.razorpay_order_id)
+        currentStatus = orderData.get("status")
+        print(currentStatus)
         if generated_signature == payload.razorpay_signature:
-            logger.info("✅ Payment signature verified successfully.")
+            logger.info("Payment signature verified successfully.")
+            updateOrder({"id": payload.razorpay_order_id}, {"status": currentStatus})
             # You can also update order status in DB here if needed
             return returnResponse(1534, result={"status": "success"})
         else:
-            logger.warning("❌ Payment signature mismatch.")
+            logger.warning("Payment signature mismatch.")
             return returnResponse(1535, result={"status": "invalid signature"})
 
     except Exception as e:

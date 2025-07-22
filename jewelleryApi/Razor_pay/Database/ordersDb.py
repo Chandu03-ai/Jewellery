@@ -30,11 +30,5 @@ def getAllOrders(query: dict = {}):
     return orders
 
 
-def updateOrder(id, updatedOrder):
-    """
-    Update an existing order by its ID.
-    """
-    result = ordersCollection.update_one({"id": id}, {"$set": updatedOrder})
-    if result.matched_count > 0:
-        return True
-    return False
+def updateOrder(query: dict, item: dict):
+    return ordersCollection.update_one(query, {"$set": item})
