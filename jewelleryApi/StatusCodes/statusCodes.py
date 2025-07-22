@@ -36,11 +36,6 @@ CUSTOM_STATUS_CODES = {
     1534: {"code": 1534, "message": "Payment verification successful."},
     1535: {"code": 1535, "message": "Payment verification failed: invalid signature."},
     1536: {"code": 1536, "message": "Error during payment verification."},
-
-
-
-
-
     1800: {"code": 1800, "message": "Shipment created successfully."},
     1801: {"code": 1801, "message": "Shipment cancelled."},
     1802: {"code": 1802, "message": "Label fetched successfully."},
@@ -48,9 +43,6 @@ CUSTOM_STATUS_CODES = {
     1804: {"code": 1804, "message": "Shipment history returned."},
     1805: {"code": 1805, "message": "AWB number not found."},
     1806: {"code": 1806, "message": "Error occurred while processing request."},
-
-
-
     2000: {"code": 2000, "message": "Unauthorized access to import products."},
     2001: {"code": 2001, "message": "Products created successfully."},
     2002: {"code": 2002, "message": "Unexpected error occurred while creating products."},
@@ -96,8 +88,8 @@ CUSTOM_STATUS_CODES = {
     2060: {"code": 2060, "message": "Product added to cart."},
     2061: {"code": 2061, "message": "Cart fetched successfully."},
     2062: {"code": 2062, "message": "Unexpected error during cart operation."},
-    2070: {"code": 2070, "message": "Product added to wishlist."},
-    2071: {"code": 2071, "message": "Wishlist fetched successfully."},
+    2070: {"code": 2070, "message": "all cart iteams cleared successfully."},
+    2071: {"code": 2071, "message": "error occured while clearing cart Items."},
     2072: {"code": 2072, "message": "Unexpected error during wishlist operation."},
     2080: {"code": 2080, "message": "Orders by date fetched successfully."},
     2081: {"code": 2081, "message": "Top-selling products fetched successfully."},
@@ -132,9 +124,26 @@ CUSTOM_STATUS_CODES = {
     2110: {"code": 2110, "message": "successessfully retrived users."},
     2111: {"code": 2111, "message": "users not found."},
     2112: {"code": 2112, "message": "Error occured while fetching Users , Please try again."},
-
-
     2113: {"code": 2113, "message": "InvalidID ,No category found , Please try again."},
     2114: {"code": 2114, "message": "Category updated successfully:"},
     2115: {"code": 2115, "message": "Error updating category,Please try again"},
+    2116: {"code": 2116, "message": "Cart item not found or already deleted."},
+    2117: {"code": 2117, "message": "Cart removed successfully."},
+    2118: {"code": 2118, "message": "Error occured while removing cart Item"},
+    2119: {"code": 2119, "message": "Cart item not found or update failed."},
+    2120: {"code": 2120, "message": "Cart item quantity updated successfully."},
+    2121: {"code": 2121, "message": "Error occurred while updating cart item quantity."},
+    2122: {"code": 2122, "message": "User role updated successfully."},
+    2123: {"code": 2123, "message": "User not found or role unchanged."},
+    2124: {"code": 2124, "message": "An error occurred while updating user role."},
+    2125: {"code": 2125, "message": "Order not found or already completed ."},
+    2126: {"code": 2126, "message": "shipment created successfully ."},
+    2127: {"code": 2127, "message": "error occured while creating shipment."},
+    2128: {"code": 2128, "message": "Shipment not found."},
+    2129: {"code": 2129, "message": "Shipment fetched successfully by ID."},
+    2130: {"code": 2130, "message": "Error occurred while fetching shipment by ID."},
+    2131: {"code": 2131, "message": "Cannot decrease. Quantity already at minimum."},
+    2132: {"code": 2132, "message": "merge cart added successfully."},
+    2133: {"code": 2133, "message": "error occured while merging Cart creating."},
+    2134: {"code": 2134, "message": "No valid cart items to bulk add."},
 }

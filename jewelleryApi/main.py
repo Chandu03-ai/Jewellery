@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI
 from yensiAuthentication import logger, yensiloginRouter, yensiSsoRouter
-from Router import generalRouter, productRouter, categoryRouter, cartRouter, utilityRouter, shippingRouter,adminProductRouter, adminCategoryRouter
+from Router import generalRouter, productRouter, categoryRouter, cartRouter, utilityRouter, shippingRouter, adminProductRouter, adminCategoryRouter, adminUserState
 from fastapi.middleware.cors import CORSMiddleware
 from yensiAuthentication.authenticate import KeycloakMiddleware
 import uvicorn
@@ -42,6 +42,7 @@ app.include_router(utilityRouter.router)
 app.include_router(adminProductRouter.router)
 app.include_router(adminCategoryRouter.router)
 app.include_router(shippingRouter.router)
+app.include_router(adminUserState.router)
 
 
 # run the FastAPI application

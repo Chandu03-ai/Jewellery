@@ -8,33 +8,33 @@ def insertOrder(order):
     result = ordersCollection.insert_one(order)
     return str(result.inserted_id)
 
-def getOrderById(orderId):
+
+def getOrderById(id):
     """
     Retrieve an order by its ID.
     """
-    order = ordersCollection.find_one({"orderId": orderId})
+    order = ordersCollection.find_one({"id": id})
     if order and "_id" in order:
         order["_id"] = str(order["_id"])
     return order
 
-def getAllOrders(query:dict = {}):
+
+def getAllOrders(query: dict = {}):
     """
-    Retrieve all orders and return as a dictionary with orderId as the key.
+    Retrieve all orders and return as a dictionary with id as the key.
     """
-    orders = {}
+    orders = []
     for order in ordersCollection.find(query):
-        order_id = order.get("orderId")
-        if order_id:
-            order["_id"] = str(order["_id"]) 
-            orders[order_id] = order
+        order["_id"] = str(order["_id"])
+        orders.append(order)
     return orders
 
 
-def updateOrder(orderId, updatedOrder):
+def updateOrder(id, updatedOrder):
     """
     Update an existing order by its ID.
     """
-    result = ordersCollection.update_one({"orderId": orderId}, {"$set": updatedOrder})
+    result = ordersCollection.update_one({"id": id}, {"$set": updatedOrder})
     if result.matched_count > 0:
         return True
     return False

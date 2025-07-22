@@ -122,24 +122,6 @@ async def deleteProductById(request: Request, productId: str):
         return returnResponse(2017)
 
 
-# @router.put("/product/{productId}/stock")
-# async def updateStock(request: Request, productId: str, payload: dict = Body(...)):
-#     try:
-#         userId = request.state.userMetadata.get("id")
-#         if not hasRequiredRole(request, [UserRoles.Admin.value]):
-#             logger.warning(f"Unauthorized stock update by user [{userId}]")
-#             return returnResponse(2000)
-
-#         quantity = payload.get("quantity", 0)
-#         stockStatus = quantity > 0
-
-#         updateProductInDb({"id": productId, "isDeleted": False}, {"noOfProducts": quantity, "inStock": stockStatus})
-#         logger.info(f"Stock updated for product [{productId}] to {quantity} by user [{userId}]")
-#         return returnResponse(2093)
-#     except Exception as e:
-#         logger.error(f"Error updating stock for product [{productId}]: {e}")
-#         return returnResponse(2094)
-
 
 @router.get("/stats/products")
 async def getProductStats(request: Request):
@@ -152,7 +134,7 @@ async def getProductStats(request: Request):
         # Get non-deleted products
         products = list(getProductsFromDb({"isDeleted": False}))
         total = len(products)
-        inStock = sum(1 for p in products if p.get("stock") is True)
+        stock = sum(1 for p in products if p.get("stock") is True)
 
         # Category-wise counts
         categories = {}
@@ -162,7 +144,7 @@ async def getProductStats(request: Request):
 
         stats = {
             "totalProducts": total,
-            "inStock": inStock,
+            "stock": stock,
             "categories": categories,
         }
 
@@ -186,8 +168,7 @@ async def getOrderStats(request: Request):
         logger.info(f"Fetching order stats for admin [{userId}]")
 
         # Fetch all non-deleted orders
-        orders = list(getAllOrders({"isDeleted": False}))
-
+        orders = list(getAllOrders({}))
         # Compute stats
         totalOrders = len(orders)
         pendingOrders = sum(1 for order in orders if order.get("status") == "pending")
