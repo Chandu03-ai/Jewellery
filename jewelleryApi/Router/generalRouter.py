@@ -61,7 +61,7 @@ async def healthCheck():
         return {"status": "Critical", "mongodb": "Unknown", "keycloak": "Unknown"}
 
 
-@router.get("/users")
+@router.get("/admin/users")
 async def getAllUser(request: Request):
     try:
         requiredRoles = [UserRoles.Admin.value]
