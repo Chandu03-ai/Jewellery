@@ -28,6 +28,7 @@ mongoCategoryCollection = os.getenv("MONGO_CATEGORY_COLLECTION_NAME", "categoryC
 mongoCartCollection = os.getenv("MONGO_CART_COLLECTION_NAME", "cartCollection")
 mongoWishlistCollection = os.getenv("MONGO_WISHLIST_COLLECTION_NAME", "wishlistCollection")
 mongoShippingCollection = os.getenv("MONGO_SHIPPING_COLLECTION_NAME", "shippingCollection")
+mongoAddressesCollection = os.getenv("MONGO_ADDRESS_COLLECTION_NAME", "addressCollection")
 
 
 

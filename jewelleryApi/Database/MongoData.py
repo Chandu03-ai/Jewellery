@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from constants import mongoUrl,mongoDatabase,mongoProductCollection,mongoCategoryCollection,mongoCartCollection,mongoWishlistCollection,mongoShippingCollection
+from constants import mongoUrl,mongoDatabase,mongoProductCollection,mongoCategoryCollection,mongoCartCollection,mongoWishlistCollection,mongoShippingCollection,mongoAddressesCollection
 
 client = MongoClient(mongoUrl)
 db = client[mongoDatabase]
@@ -8,6 +8,7 @@ categoriesCollection = db[mongoCategoryCollection]
 cartCollection = db[mongoCartCollection]
 wishlistCollection = db[mongoWishlistCollection]
 shippingCollection = db[mongoShippingCollection]
+addressesCollection = db[mongoAddressesCollection]
 
 
 

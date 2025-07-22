@@ -33,5 +33,7 @@ CUSTOM_STATUS_CODES = {
     1530: {"code": 1530, "message": "Payments for order fetched successfully."},
     1531: {"code": 1531, "message": "Failed to fetch payments for order."},
     1532: {"code": 1532, "message": "Orders listed successfully."},
-    1533: {"code": 1533, "message": "Failed to list orders."}
+    1533: {"code": 1533, "message": "Failed to list orders."},
+    1553: {"code": 1553, "message": "history fetched successfully."},
+    1554: {"code": 1554, "message": "history fetched successfully."},
 }

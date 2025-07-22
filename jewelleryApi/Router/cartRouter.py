@@ -23,7 +23,7 @@ async def addToCart(request: Request, payload: CartItemModel):
         if not product:
             logger.warning(f"Product with ID {productId} not found.")
             return returnResponse(2003)
-        cartItem.update({"id": str(ObjectId()), "userId": userId, "createdAt": formatDateTime(), "isDeleted": False, "product": product})
+        cartItem.update({"id": str(ObjectId()), "userId": userId, "createdAt": formatDateTime(), "isDeleted": False, "productId": productId, "product": product})
         addToCartDb(cartItem)
         cartItem.pop("_id", None)
         logger.info(f"cartItem added sussessfully")
@@ -106,6 +106,7 @@ async def mergeToCart(request: Request, payload: BulkCartRequest):
                 continue
 
             cartItem = {
+                "id": str(ObjectId()),
                 "userId": userId,
                 "productId": item.productId,
                 "quantity": item.quantity,
