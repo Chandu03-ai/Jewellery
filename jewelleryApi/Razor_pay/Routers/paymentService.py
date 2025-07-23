@@ -57,7 +57,6 @@ def verifyPayment(payload: PaymentVerificationPayload):
         generated_signature = hmac.new(key=bytes(razorpaySecret, "utf-8"), msg=bytes(body, "utf-8"), digestmod=hashlib.sha256).hexdigest()
         orderData = client.order.fetch(payload.razorpay_order_id)
         currentStatus = orderData.get("status")
-        print(currentStatus)
         if generated_signature == payload.razorpay_signature:
             logger.info("Payment signature verified successfully.")
             updateOrder({"id": payload.razorpay_order_id}, {"status": currentStatus})
