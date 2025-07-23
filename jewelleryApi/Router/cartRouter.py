@@ -105,8 +105,6 @@ async def mergeToCart(request: Request, payload: BulkCartRequest):
     try:
         userId = request.state.userMetadata.get("id")
         logger.debug(f"Bulk cart add started by user [{userId}]")
-        print(payload.model_dump())
-
         cartItems = []
 
         for item in payload.items:

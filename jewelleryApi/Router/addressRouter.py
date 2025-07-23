@@ -90,7 +90,6 @@ async def getAddress(addressId: str):
     try:
         logger.info(f"Fetching address by ID: {addressId}")
         addressData = getAddressById({"id": addressId})
-        print(addressData)
         return returnResponse(2145, result=addressData)
     except Exception as e:
         logger.error(f"Error fetching address: {str(e)}")
