@@ -10,7 +10,7 @@ from Models.userModel import UserRoles
 from yensiAuthentication import logger
 from Utils.slugify import slugify
 from ReturnLog.logReturn import returnResponse
-from Database.productDb import getProductsFromDb, updateProductInDb
+from Database.productDb import getProductsFromDb, updateProductInDb, updateManyProductsInDb
 
 router = APIRouter(prefix="/admin", tags=["Admin-Categories"])
 
@@ -35,10 +35,9 @@ async def createCategory(request: Request, payload: CategoryModel):
                         "$set": {
                             "name": payload.name,
                             "image": payload.image,
-                            "parentId": payload.parentId,
-                            "isParent": payload.isParent,
                             "sizeOptions": payload.sizeOptions,
                             "isDeleted": False,
+                            "categoryType": payload.categoryType,
                             "updatedAt": formatDateTime(),
                         }
                     },
@@ -54,9 +53,8 @@ async def createCategory(request: Request, payload: CategoryModel):
             "name": payload.name,
             "slug": slug,
             "image": payload.image,
-            "parentId": payload.parentId,
-            "isParent": payload.isParent,
             "sizeOptions": payload.sizeOptions,
+            "categoryType": payload.categoryType,
             "createdAt": formatDateTime(),
             "updatedAt": formatDateTime(),
             "isDeleted": False,
@@ -116,13 +114,11 @@ async def updateCategory(request: Request, categoryId: str, payload: UpdateCateg
             updateData["slug"] = slugify(payload.slug or payload.name)
         if payload.image is not None:
             updateData["image"] = payload.image
-        if payload.parentId is not None:
-            updateData["parentId"] = payload.parentId
-        if payload.isParent is not None:
-            updateData["isParent"] = payload.isParent
         if payload.sizeOptions is not None:
             updateData["sizeOptions"] = payload.sizeOptions
-
+            updateManyProductsInDb({"categoryId": categoryId}, {"sizeOptions": payload.sizeOptions})
+        if payload.categoryType is not None:
+            updateData["categoryType"] = payload.categoryType
         updateData["updatedAt"] = formatDateTime()
         updateCategoryInDb({"id": categoryId}, updateData)
         updated = getCategoryFromDb({"id": categoryId})

@@ -10,6 +10,7 @@ from yensiAuthentication import logger
 from Utils.slugify import slugify
 from ReturnLog.logReturn import returnResponse
 from Razor_pay.Database.ordersDb import getAllOrders
+from Database.categoryDb import getCategoryFromDb
 
 router = APIRouter(prefix="/admin", tags=["Admin-Products"])
 
@@ -27,7 +28,13 @@ async def createProduct(request: Request, payload: ProductImportModel):
 
         slug = slugify(payload.slug or payload.name)
         productDict = payload.model_dump()
-        productDict.update({"slug": slug, "updatedAt": formatDateTime()})
+        category = getCategoryFromDb({"id": payload.category, "isDeleted": False})
+        if not category:
+            logger.warning(f"categeory not found for this category slug :{payload.category}")
+            return returnResponse(2025)
+        sizeOptions = category.get("sizeOptions")
+        categoryName = category.get("name")
+        productDict.update({"slug": slug, "updatedAt": formatDateTime(), "sizeOptions": sizeOptions, "categoryId": payload.category})
 
         existing = getProductFromDb({"slug": slug, "isDeleted": False})
 
@@ -39,7 +46,7 @@ async def createProduct(request: Request, payload: ProductImportModel):
             productDict.update({"id": str(ObjectId()), "createdBy": userId, "createdAt": formatDateTime(), "isDeleted": False})
             insertProductToDb(productDict)
             logger.info(f"Inserted new product: {payload.name} (slug: {slug})")
-
+        updateProductInDb({"slug": slug, "isDeleted": False}, {"category": categoryName})
         productDict.pop("_id", None)
         logger.info(f"Product creation completed by user [{userId}]")
         return returnResponse(2001, result=productDict)
@@ -120,7 +127,6 @@ async def deleteProductById(request: Request, productId: str):
     except Exception as e:
         logger.error(f"Error deleting product [{productId}]: {e}")
         return returnResponse(2017)
-
 
 
 @router.get("/stats/products")

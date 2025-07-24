@@ -1,12 +1,15 @@
 import os
 import asyncio
-from bson import ObjectId
+import random
+import json
 import httpx
 from testConfig import loginUrl, adminEmail, adminPassword, CATEGORY_URL, PRODUCT_URL, UPLOAD_URL
 
 categories = [
-    {"name": "Necklaces", "slug": "necklaces"},
+    {"name": "Sarees", "slug": "sarees"},
+    {"name": "Bags", "slug": "bags"},
     {"name": "Earrings", "slug": "earrings"},
+    {"name": "Necklaces", "slug": "necklaces"},
     {"name": "Bracelets", "slug": "bracelets"},
     {"name": "Rings", "slug": "rings"},
 ]
@@ -53,17 +56,29 @@ async def uploadImages(client, cookies, imagePaths):
     return uploadedNames
 
 
+def getCategoryType(slug: str):
+    if slug in ["sarees", "bags"]:
+        return "handloom"
+    else:
+        return "handmade"
+
+
 async def createCategories(client, cookies, uploadedImages):
     created = []
     for idx, cat in enumerate(categories):
         imageName = uploadedImages[idx % len(uploadedImages)]
-        payload = {"name": cat["name"], "slug": cat["slug"], "image": imageName, "parentId": str(ObjectId()), "isParent": True}
+        slug = cat["slug"].lower()
+        payload = {"name": cat["name"], "slug": slug, "image": imageName, "sizeOptions": random.choice([["S", "M"], ["M", "L", "XL"], ["Free Size"]]), "categoryType": getCategoryType(slug)}
         try:
             res = await client.post(CATEGORY_URL, cookies=cookies, json=payload)
             data = res.json()
+            print("data", data)
             if data.get("code") in [2020, 2023]:
                 print(f"✔️ Category created/existing: {cat['name']}")
-                created.append(data["result"]["slug"])
+                if isinstance(data.get("result"), dict) and data["result"].get("id"):
+                    categoryId = data["result"]["id"]
+                    created.append(categoryId)
+
             else:
                 print(f"❌ Category create failed: {cat['name']} → {data.get('message')}")
         except Exception as e:
@@ -71,18 +86,29 @@ async def createCategories(client, cookies, uploadedImages):
     return created
 
 
+def getProductDetails(slug: str):
+    if slug == "sarees":
+        return json.dumps({"fabric": "Silk", "shelfLife": "2 years", "careInstructions": "Dry clean only"})
+    elif slug == "bags":
+        return json.dumps({"material": "Jute", "capacity": "5kg", "handmade": True})
+    else:
+        return json.dumps({"material": "Gold", "purity": "22K", "weight": "6.5g", "stoneType": "Diamond"})
+
+
 async def createProducts(client, cookies, categorySlugs, uploadedImages):
-    for i in range(2):
+    for i in range(20):
+        catSlug = categorySlugs[i % len(categorySlugs)]
         product = {
             "name": f"Product {i+1}",
             "slug": f"product-{i+1}",
-            "category": categorySlugs[i % len(categorySlugs)],
+            "category": catSlug,
             "description": f"Elegant handcrafted item {i+1}.",
             "initialPrice": 1000 + i * 100,
             "price": 1200 + i * 100,
             "comparePrice": 1500 + i * 100,
             "images": [uploadedImages[i % len(uploadedImages)]],
             "stock": True,
+            "details": getProductDetails(catSlug),
         }
         try:
             res = await client.post(PRODUCT_URL, cookies=cookies, json=product)
@@ -111,6 +137,7 @@ async def main():
             return
 
         categorySlugs = await createCategories(client, cookies, uploadedFileNames)
+        print(categorySlugs)
         if categorySlugs:
             await createProducts(client, cookies, categorySlugs, uploadedFileNames)
         else:

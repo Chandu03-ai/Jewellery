@@ -8,7 +8,7 @@ from Utils.imageUploader import saveFile
 router = APIRouter(tags=["Utility"])
 
 
-@router.post("/auth/upload-file")
+@router.post("/upload-file")
 async def uploadFile(file: UploadFile = File(...)):
     try:
         logger.debug(f"uploadFile function called ")
