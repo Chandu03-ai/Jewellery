@@ -28,14 +28,35 @@ async def createCategory(request: Request, payload: CategoryModel):
 
         existing = getCategoryFromDb({"slug": slug})
         if existing:
-            logger.info(f"Category already exists: {payload.name}")
-            return returnResponse(2023, result=existing)
+            if existing.get("isDeleted"):
+                updateCategoryInDb(
+                    existing["id"],
+                    {
+                        "$set": {
+                            "name": payload.name,
+                            "image": payload.image,
+                            "parentId": payload.parentId,
+                            "isParent": payload.isParent,
+                            "sizeOptions": payload.sizeOptions,
+                            "isDeleted": False,
+                            "updatedAt": formatDateTime(),
+                        }
+                    },
+                )
+                logger.info(f"Category restored: {payload.name}")
+                return returnResponse(2020)
+            else:
+                logger.info(f"Category already exists: {payload.name}")
+                return returnResponse(2023, result=existing)
 
         categoryData = {
             "id": str(ObjectId()),
             "name": payload.name,
             "slug": slug,
             "image": payload.image,
+            "parentId": payload.parentId,
+            "isParent": payload.isParent,
+            "sizeOptions": payload.sizeOptions,
             "createdAt": formatDateTime(),
             "updatedAt": formatDateTime(),
             "isDeleted": False,
@@ -95,6 +116,13 @@ async def updateCategory(request: Request, categoryId: str, payload: UpdateCateg
             updateData["slug"] = slugify(payload.slug or payload.name)
         if payload.image is not None:
             updateData["image"] = payload.image
+        if payload.parentId is not None:
+            updateData["parentId"] = payload.parentId
+        if payload.isParent is not None:
+            updateData["isParent"] = payload.isParent
+        if payload.sizeOptions is not None:
+            updateData["sizeOptions"] = payload.sizeOptions
+
         updateData["updatedAt"] = formatDateTime()
         updateCategoryInDb({"id": categoryId}, updateData)
         updated = getCategoryFromDb({"id": categoryId})
