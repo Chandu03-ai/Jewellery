@@ -1,0 +1,90 @@
+<!-- templates/emailTemplates/welcomeEmail.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Welcome to Taanera</title>
+    <style>
+        body {
+            background-color: #f6f1eb;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 30px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #a0522d;
+            /* soft burnt umber tone */
+            color: white;
+            padding: 24px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .content-box {
+            background-color: #fff8f3;
+            border: 1px solid #e8d8cc;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .content-box p {
+            margin: 0 0 15px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            color: #a0522d;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #777;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            🎉 Welcome to Taanera!
+        </div>
+
+        <div class="content-box">
+            <p>Hello <span class="highlight">{{ userName }}</span>,</p>
+
+            <p>Your account has been registered successfully.</p>
+
+            <p>We're thrilled to have you with us. You can now explore our unique collections and begin your journey
+                with Taanera.</p>
+
+            <p>If you have any questions, feel free to reach out — we're always here to help.</p>
+
+            <p>Happy shopping!<br>
+                <strong>– The Taanera Team</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            &copy; 2025 Taanera. All rights reserved.
+        </div>
+    </div>
+</body>
+
+</html>

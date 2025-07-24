@@ -167,4 +167,6 @@ CUSTOM_STATUS_CODES = {
     2144: {"code": 2144, "message": "Error occurred while fetching address."},
     2145: {"code": 2145, "message": "User addresses fetched successfully."},
     2146: {"code": 2146, "message": "Error occurred while fetching user addresses."},
+    2147: {"code": 2147, "message": "email sent successfully"},
+    2148: {"code": 2148, "message": "error while sending email"},
 }

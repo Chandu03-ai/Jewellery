@@ -12,3 +12,4 @@ class ProductImportModel(BaseModel):
     comparePrice: Optional[float] = 0  # optional MRP
     images: List[str] = Field(default_factory=list)
     stock: bool = True
+    details: Optional[str] = None

@@ -1,0 +1,97 @@
+<!-- templates/emailTemplates/orderSuccess.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Order Success - Taanera</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdfaf5;
+            padding: 30px;
+            color: #444;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        .header {
+            background: linear-gradient(to right, #d4af37, #f6e2b3);
+            color: #5a4231;
+            padding: 24px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .line-box {
+            height: 4px;
+            background-color: #d4af37;
+            /* classic gold */
+            width: 80px;
+            margin: 12px auto 20px auto;
+            border-radius: 2px;
+        }
+
+        .title {
+            margin-top: 24px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #7a5c4d;
+        }
+
+        .message {
+            margin-top: 16px;
+            font-size: 16px;
+            line-height: 1.7;
+            color: #5a4b43;
+        }
+
+        .order-id {
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            ✨ Thank You for Your Order!
+        </div>
+
+        <!-- Decorative gold line below the header -->
+        <div class="line-box"></div>
+
+        <div class="title">Hello {{ userName }},</div>
+
+        <div class="message">
+            We're delighted to confirm that your order <span class="order-id">#{{ orderId }}</span> has been placed
+            successfully.<br><br>
+            A confirmation email with your order details and tracking info will be sent shortly.<br><br>
+            In the meantime, feel free to explore more timeless treasures at <strong>Taanera</strong>.
+        </div>
+
+        <div class="footer">
+            Questions? Just reply to this email or reach out to our support team.<br>
+            &copy; 2025 Taanera. All rights reserved.
+        </div>
+    </div>
+</body>
+
+</html>
